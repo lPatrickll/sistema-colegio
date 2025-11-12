@@ -1,4 +1,4 @@
-// src/app/api/create-teacher/route.ts
+// app/api/create-student/route.ts
 import { NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebase-admin";
 
@@ -10,16 +10,24 @@ async function isAdmin(uid: string) {
 
 export async function POST(req: Request) {
   try {
-    const data = await req.json();
+    const body = await req.json();
 
     const {
       adminUid,
       nombreCompleto,
       ci,
       email,
+      curso,
+      paralelo,
       telefono,
-      materia,
-    } = data;
+    } = body;
+
+    if (!adminUid) {
+      return NextResponse.json(
+        { error: "Falta adminUid" },
+        { status: 400 }
+      );
+    }
 
     const adminIsValid = await isAdmin(adminUid);
     if (!adminIsValid) {
@@ -29,24 +37,33 @@ export async function POST(req: Request) {
       );
     }
 
+    if (!nombreCompleto || !ci || !email) {
+      return NextResponse.json(
+        { error: "Nombre, CI y correo son obligatorios" },
+        { status: 400 }
+      );
+    }
+
     const newUser = await adminAuth.createUser({
       email,
+      password: ci,
       displayName: nombreCompleto,
     });
 
     await adminDb.collection("users").doc(newUser.uid).set({
-      role: "teacher",
+      role: "student",
       email,
       name: nombreCompleto,
     });
 
-    await adminDb.collection("teachers").add({
+    await adminDb.collection("students").add({
       uid: newUser.uid,
       nombreCompleto,
       ci,
       email,
+      curso,
+      paralelo,
       telefono,
-      materia,
       createdAt: new Date(),
       createdBy: adminUid,
     });
@@ -55,7 +72,7 @@ export async function POST(req: Request) {
   } catch (err: any) {
     console.error(err);
     return NextResponse.json(
-      { error: err.message },
+      { error: err.message ?? "Error al crear estudiante" },
       { status: 500 }
     );
   }
