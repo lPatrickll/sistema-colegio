@@ -1,17 +1,15 @@
 // src/Teacher/application/createTeacher.usecase.ts
-import {
-  CreateTeacherDTO,
-  TeacherFirebaseRepository,
-} from "../repository/teacher.firebase.repository";
+import { TeacherApiRepository } from "@/components/RegisterTeacher/repository/teacher.api.repository";
+import { CreateTeacherDTO } from "../domain/teacher.types";
 
 export class CreateTeacherUseCase {
-  private readonly repo: TeacherFirebaseRepository;
+  private readonly repo: TeacherApiRepository;
 
-  constructor(repo?: TeacherFirebaseRepository) {
-    this.repo = repo ?? new TeacherFirebaseRepository();
+  constructor(repo?: TeacherApiRepository) {
+    this.repo = repo ?? new TeacherApiRepository();
   }
 
-  async execute(data: CreateTeacherDTO) {
+  async execute(adminUid: string, data: CreateTeacherDTO) {
     if (!data.nombreCompleto.trim()) {
       throw new Error("El nombre es obligatorio");
     }
@@ -22,6 +20,6 @@ export class CreateTeacherUseCase {
       throw new Error("El CI es obligatorio");
     }
 
-    return this.repo.create(data);
+    return this.repo.create(adminUid, data);
   }
 }

@@ -1,4 +1,4 @@
-// src/app/api/create-teacher/route.ts
+// src/app/api/createTeacher/route.ts
 import { NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebase-admin";
 

@@ -43,33 +43,26 @@ export default function ProfesoresPage() {
     setSubmitting(true);
 
     try {
-        const res = await fetch("/api/createTeacher", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            adminUid: user.uid,
-            nombreCompleto,
-            ci,
-            email,
-            telefono,
-            materia,
-        }),
-        });
+      await createTeacherUseCase.execute(user.uid, {
+        nombreCompleto,
+        ci,
+        email,
+        telefono,
+        materia,
+        createdBy: user.uid,
+      });
 
-        const result = await res.json();
-
-        if (!res.ok) throw new Error(result.error);
-
-        setSuccess("Profesor creado correctamente.");
-        setNombreCompleto("");
-        setCi("");
-        setEmail("");
-        setTelefono("");
-        setMateria("");
+      setSuccess("Profesor creado correctamente.");
+      setNombreCompleto("");
+      setCi("");
+      setEmail("");
+      setTelefono("");
+      setMateria("");
     } catch (err: any) {
-        setError(err.message ?? "Error al crear el profesor.");
+      console.error(err);
+      setError(err.message ?? "Error al crear el profesor.");
     } finally {
-        setSubmitting(false);
+      setSubmitting(false);
     }
   };
 
