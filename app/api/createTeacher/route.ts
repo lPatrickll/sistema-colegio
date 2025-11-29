@@ -31,6 +31,7 @@ export async function POST(req: Request) {
 
     const newUser = await adminAuth.createUser({
       email,
+      password: ci,
       displayName: nombreCompleto,
     });
 

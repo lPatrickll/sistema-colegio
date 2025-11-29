@@ -24,9 +24,10 @@ export default function LoginPage() {
     try {
       const user = await loginUseCase.execute({ email, password });
 
-      if (user.role === "admin") {
-        router.push("/admin/teachers");
-      } else {
+      if (user.role === "admin") router.push("/admin");
+      if (user.role === "teacher") router.push("/teacher");
+      if (user.role === "student") router.push("/student"); 
+      else {
         router.push("/");
       }
     } catch (err) {
