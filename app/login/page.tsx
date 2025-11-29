@@ -23,10 +23,13 @@ export default function LoginPage() {
 
     try {
       const user = await loginUseCase.execute({ email, password });
-      console.log("Usuario logueado:", user);
 
-      router.push("/");
-    } catch (err: any) {
+      if (user.role === "admin") {
+        router.push("/admin/teachers");
+      } else {
+        router.push("/");
+      }
+    } catch (err) {
       console.error(err);
       setError("Correo o contraseña incorrectos.");
     } finally {
