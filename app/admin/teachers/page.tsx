@@ -32,7 +32,6 @@ export default function TeacherPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // cargar materias
   useEffect(() => {
     async function loadSubjects() {
       const snap = await getDocs(collection(db, "subjects"));

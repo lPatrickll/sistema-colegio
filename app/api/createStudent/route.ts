@@ -1,6 +1,7 @@
-// app/api/create-student/route.ts
+// app/api/createStudent/route.ts
 import { NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebase-admin";
+import { FieldValue } from "firebase-admin/firestore";
 
 async function isAdmin(uid: string) {
   const doc = await adminDb.collection("users").doc(uid).get();
@@ -17,24 +18,20 @@ export async function POST(req: Request) {
       nombreCompleto,
       ci,
       email,
-      curso,
-      paralelo,
       telefono,
+      descripcion,
+      courseId,
+      courseNombre,
+      courseParalelo,
     } = body;
 
     if (!adminUid) {
-      return NextResponse.json(
-        { error: "Falta adminUid" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Falta adminUid" }, { status: 400 });
     }
 
-    const adminIsValid = await isAdmin(adminUid);
-    if (!adminIsValid) {
-      return NextResponse.json(
-        { error: "No autorizado" },
-        { status: 403 }
-      );
+    const ok = await isAdmin(adminUid);
+    if (!ok) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 403 });
     }
 
     if (!nombreCompleto || !ci || !email) {
@@ -61,16 +58,28 @@ export async function POST(req: Request) {
       nombreCompleto,
       ci,
       email,
-      curso,
-      paralelo,
       telefono,
+      descripcion: descripcion ?? "",
+      courseId: courseId ?? null,
+      courseNombre: courseNombre ?? null,
+      courseParalelo: courseParalelo ?? null,
       createdAt: new Date(),
       createdBy: adminUid,
     });
 
+    if (courseId) {
+      await adminDb.collection("courses").doc(courseId).update({
+        estudiantes: FieldValue.arrayUnion({
+          studentUid: newUser.uid,
+          studentName: nombreCompleto,
+          studentCi: ci,
+        }),
+      });
+    }
+
     return NextResponse.json({ success: true });
   } catch (err: any) {
-    console.error(err);
+    console.error("ERROR createStudent:", err);
     return NextResponse.json(
       { error: err.message ?? "Error al crear estudiante" },
       { status: 500 }

@@ -10,6 +10,7 @@ const links = [
   { href: "/admin/teachers", label: "Registrar profesor" },
   { href: "/admin/student", label: "Registrar estudiante" },
   { href: "/admin/subjects", label: "Registrar materia" },
+  { href: "/admin/courses", label: "Crear curso" },
   { href: "/admin/teachers/list", label: "Lista de profesores" },
   { href: "/admin/student/list", label: "Lista de estudiantes" },
   { href: "/admin/subjects/list", label: "Lista de materias" },

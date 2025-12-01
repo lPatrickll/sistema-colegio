@@ -1,6 +1,6 @@
 // src/components/RegisterStudent/application/createStudent.usecase.ts
-import { StudentApiRepository } from "../repository/student.api.repository";
 import { CreateStudentDTO } from "../domain/student.types";
+import { StudentApiRepository } from "../repository/student.api.repository";
 
 export class CreateStudentUseCase {
   private readonly repo: StudentApiRepository;
@@ -9,7 +9,7 @@ export class CreateStudentUseCase {
     this.repo = repo ?? new StudentApiRepository();
   }
 
-  async execute(adminUid: string, data: CreateStudentDTO): Promise<void> {
+  async execute(adminUid: string, data: CreateStudentDTO) {
     if (!data.nombreCompleto.trim()) {
       throw new Error("El nombre es obligatorio");
     }
