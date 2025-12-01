@@ -18,4 +18,4 @@ export class TeacherApiRepository {
       throw new Error(result.error ?? "Error al crear profesor");
     }
   }
-}
+} 
