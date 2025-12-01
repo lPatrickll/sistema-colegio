@@ -9,8 +9,10 @@ const links = [
   { href: "/admin", label: "Inicio" },
   { href: "/admin/teachers", label: "Registrar profesor" },
   { href: "/admin/student", label: "Registrar estudiante" },
+  { href: "/admin/subjects", label: "Registrar materia" },
   { href: "/admin/teachers/list", label: "Lista de profesores" },
   { href: "/admin/student/list", label: "Lista de estudiantes" },
+  { href: "/admin/subjects/list", label: "Lista de materias" },
 ];
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
@@ -18,7 +20,6 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Proteger todo /admin
   useEffect(() => {
     if (loading) return;
 
@@ -38,7 +39,6 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen flex">
-      {/* Barra lateral */}
       <aside className="w-64 bg-slate-900 text-white flex flex-col">
         <div className="p-4 text-lg font-bold border-b border-slate-700">
           Panel admin
@@ -62,7 +62,6 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         </nav>
       </aside>
 
-      {/* Contenido de cada página de /admin */}
       <main className="flex-1 bg-slate-50">{children}</main>
     </div>
   );

@@ -9,7 +9,6 @@ export default function AdminHomePage() {
       </p>
 
       <div className="grid gap-4 md:grid-cols-2">
-        {/* Registrar profesor */}
         <Link
           href="/admin/teachers"
           className="border bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition block"
@@ -20,7 +19,6 @@ export default function AdminHomePage() {
           </p>
         </Link>
 
-        {/* Registrar estudiante */}
         <Link
           href="/admin/student"
           className="border bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition block"
@@ -31,7 +29,6 @@ export default function AdminHomePage() {
           </p>
         </Link>
 
-        {/* Lista de profesores */}
         <Link
           href="/admin/teachers/list"
           className="border bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition block"
@@ -42,7 +39,6 @@ export default function AdminHomePage() {
           </p>
         </Link>
 
-        {/* Lista de estudiantes */}
         <Link
           href="/admin/student/list"
           className="border bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition block"

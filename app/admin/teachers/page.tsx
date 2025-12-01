@@ -1,34 +1,57 @@
-// src/app/admin/profesores/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CreateTeacherUseCase } from "@/components/RegisterTeacher/application/createTeacher.usecase";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import { useAuth } from "@/components/Auth/AuthContext";
+import { CreateTeacherUseCase } from "@/components/RegisterTeacher/application/createTeacher.usecase";
 
 const createTeacherUseCase = new CreateTeacherUseCase();
 
-export default function ProfesoresPage() {
-    const router = useRouter();
-    const { user, loading } = useAuth();
+type SubjectOption = {
+  id: string;
+  nombre: string;
+  sigla: string;
+};
 
-    const [nombreCompleto, setNombreCompleto] = useState("");
-    const [ci, setCi] = useState("");
-    const [email, setEmail] = useState("");
-    const [telefono, setTelefono] = useState("");
-    const [materia, setMateria] = useState("");
-    const [error, setError] = useState<string | null>(null);
-    const [success, setSuccess] = useState<string | null>(null);
-    const [submitting, setSubmitting] = useState(false);
+export default function TeacherPage() {
+  const router = useRouter();
+  const { user, loading } = useAuth();
+
+  const [subjects, setSubjects] = useState<SubjectOption[]>([]);
+  const [nombreCompleto, setNombreCompleto] = useState("");
+  const [ci, setCi] = useState("");
+  const [email, setEmail] = useState("");
+  const [telefono, setTelefono] = useState("");
+  const [materiaId, setMateriaId] = useState("");
+  const [materiaNombre, setMateriaNombre] = useState("");
+  const [materiaSigla, setMateriaSigla] = useState("");
+
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  // cargar materias
+  useEffect(() => {
+    async function loadSubjects() {
+      const snap = await getDocs(collection(db, "subjects"));
+      const list: SubjectOption[] = [];
+      snap.forEach(doc => {
+        const d = doc.data() as { nombre: string; sigla: string };
+        list.push({ id: doc.id, nombre: d.nombre, sigla: d.sigla });
+      });
+      setSubjects(list);
+    }
+    loadSubjects();
+  }, []);
 
   useEffect(() => {
     if (loading) return;
-
     if (!user) {
       router.push("/login");
       return;
     }
-
     if (user.role !== "admin") {
       router.push("/");
     }
@@ -48,7 +71,9 @@ export default function ProfesoresPage() {
         ci,
         email,
         telefono,
-        materia,
+        materiaId,
+        materiaNombre,
+        materiaSigla,
         createdBy: user.uid,
       });
 
@@ -57,7 +82,9 @@ export default function ProfesoresPage() {
       setCi("");
       setEmail("");
       setTelefono("");
-      setMateria("");
+      setMateriaId("");
+      setMateriaNombre("");
+      setMateriaSigla("");
     } catch (err: any) {
       console.error(err);
       setError(err.message ?? "Error al crear el profesor.");
@@ -71,60 +98,79 @@ export default function ProfesoresPage() {
   }
 
   return (
-    <main className="min-h-screen p-6">
-      <h1 className="text-2xl font-bold mb-4">Crear profesor</h1>
+    <div className="p-8">
+      <h1 className="text-2xl font-bold mb-6">Crear profesor</h1>
 
       <form
         onSubmit={handleSubmit}
-        className="max-w-md flex flex-col gap-4 border rounded-md p-4"
+        className="max-w-xl bg-white border rounded p-6"
       >
-        <label className="flex flex-col gap-1 text-sm">
-          Nombre completo
+        {/* Nombre */}
+        <label className="block mb-3">
+          <span className="text-sm">Nombre completo</span>
           <input
             value={nombreCompleto}
             onChange={e => setNombreCompleto(e.target.value)}
-            className="border rounded p-2 text-sm"
+            className="w-full border rounded p-2"
             required
           />
         </label>
 
-        <label className="flex flex-col gap-1 text-sm">
-          CI
+        {/* CI */}
+        <label className="block mb-3">
+          <span className="text-sm">CI</span>
           <input
             value={ci}
             onChange={e => setCi(e.target.value)}
-            className="border rounded p-2 text-sm"
+            className="w-full border rounded p-2"
             required
           />
         </label>
 
-        <label className="flex flex-col gap-1 text-sm">
-          Correo
+        {/* Correo */}
+        <label className="block mb-3">
+          <span className="text-sm">Correo</span>
           <input
             type="email"
             value={email}
             onChange={e => setEmail(e.target.value)}
-            className="border rounded p-2 text-sm"
+            className="w-full border rounded p-2"
             required
           />
         </label>
 
-        <label className="flex flex-col gap-1 text-sm">
-          Teléfono
+        {/* Teléfono */}
+        <label className="block mb-3">
+          <span className="text-sm">Teléfono</span>
           <input
             value={telefono}
             onChange={e => setTelefono(e.target.value)}
-            className="border rounded p-2 text-sm"
+            className="w-full border rounded p-2"
           />
         </label>
 
-        <label className="flex flex-col gap-1 text-sm">
-          Materia
-          <input
-            value={materia}
-            onChange={e => setMateria(e.target.value)}
-            className="border rounded p-2 text-sm"
-          />
+        {/* Materia (select) */}
+        <label className="block mb-4">
+          <span className="text-sm">Materia</span>
+          <select
+            value={materiaId}
+            onChange={e => {
+              const id = e.target.value;
+              setMateriaId(id);
+              const selected = subjects.find(s => s.id === id);
+              setMateriaNombre(selected ? selected.nombre : "");
+              setMateriaSigla(selected ? selected.sigla : "");
+            }}
+            className="w-full border rounded p-2"
+            required
+          >
+            <option value="">Seleccione una materia</option>
+            {subjects.map(s => (
+              <option key={s.id} value={s.id}>
+                {s.sigla} - {s.nombre}
+              </option>
+            ))}
+          </select>
         </label>
 
         {error && <p className="text-red-600 text-sm">{error}</p>}
@@ -133,11 +179,11 @@ export default function ProfesoresPage() {
         <button
           type="submit"
           disabled={submitting}
-          className="mt-2 p-2 rounded bg-green-600 text-white disabled:opacity-60"
+          className="mt-2 w-full p-2 bg-green-600 text-white rounded"
         >
           {submitting ? "Guardando..." : "Crear profesor"}
         </button>
       </form>
-    </main>
+    </div>
   );
 }

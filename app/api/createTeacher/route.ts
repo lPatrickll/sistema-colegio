@@ -18,8 +18,17 @@ export async function POST(req: Request) {
       ci,
       email,
       telefono,
-      materia,
+      materiaId,
+      materiaNombre,
+      materiaSigla,
     } = data;
+
+    if (!adminUid) {
+      return NextResponse.json(
+        { error: "Falta adminUid" },
+        { status: 400 }
+      );
+    }
 
     const adminIsValid = await isAdmin(adminUid);
     if (!adminIsValid) {
@@ -29,9 +38,16 @@ export async function POST(req: Request) {
       );
     }
 
+    if (!nombreCompleto || !ci || !email || !materiaId) {
+      return NextResponse.json(
+        { error: "Faltan datos obligatorios" },
+        { status: 400 }
+      );
+    }
+
     const newUser = await adminAuth.createUser({
       email,
-      password: ci,
+      password: ci, // contraseña inicial
       displayName: nombreCompleto,
     });
 
@@ -47,7 +63,9 @@ export async function POST(req: Request) {
       ci,
       email,
       telefono,
-      materia,
+      materiaId,
+      materiaNombre,
+      materiaSigla,
       createdAt: new Date(),
       createdBy: adminUid,
     });

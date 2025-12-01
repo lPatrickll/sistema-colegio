@@ -1,6 +1,6 @@
 // src/Teacher/application/createTeacher.usecase.ts
-import { TeacherApiRepository } from "@/components/RegisterTeacher/repository/teacher.api.repository";
 import { CreateTeacherDTO } from "../domain/teacher.types";
+import { TeacherApiRepository } from "../repository/teacher.api.repository";
 
 export class CreateTeacherUseCase {
   private readonly repo: TeacherApiRepository;
@@ -18,6 +18,9 @@ export class CreateTeacherUseCase {
     }
     if (!data.ci.trim()) {
       throw new Error("El CI es obligatorio");
+    }
+    if (!data.materiaId.trim()) {
+      throw new Error("Debe seleccionar una materia");
     }
 
     return this.repo.create(adminUid, data);
