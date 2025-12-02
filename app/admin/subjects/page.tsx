@@ -55,13 +55,13 @@ export default function CreateSubjectPage() {
 
   return (
     <div className="p-8">
-      <h1 className="text-2xl font-bold mb-6">Registrar materia</h1>
+      <h1 className="text-2xl font-bold mb-6 text-slate-900">Registrar materia</h1>
 
       <form
         onSubmit={handleSubmit}
-        className="max-w-xl bg-white border p-6 rounded"
+        className="max-w-xl bg-white border p-6 rounded border-slate-900"
       >
-        <label className="block mb-3">
+        <label className="block mb-3 text-slate-900">
           <span className="text-sm">Nombre de la materia</span>
           <input
             className="w-full border rounded p-2"
@@ -72,7 +72,7 @@ export default function CreateSubjectPage() {
           />
         </label>
 
-        <label className="block mb-4">
+        <label className="block mb-4 text-slate-900">
           <span className="text-sm">Sigla</span>
           <input
             className="w-full border rounded p-2"

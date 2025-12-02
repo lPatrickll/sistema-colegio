@@ -104,8 +104,8 @@ export default function CreateCoursePage() {
   const handleCreate = async (e: any) => {
     e.preventDefault();
 
-    if (!selectedSubjects.length)
-      return setError("El curso debe tener al menos 1 materia");
+    setError(null);
+    setSuccess(null);
 
     try {
       await createCourseUseCase.execute(user!.uid, {
@@ -132,75 +132,94 @@ export default function CreateCoursePage() {
 
   return (
     <div className="p-8">
-      <h1 className="text-xl font-bold mb-4">Crear curso</h1>
+      <h1 className="text-xl font-bold mb-4 text-slate-900">Crear curso</h1>
 
       <form onSubmit={handleCreate} className="space-y-4 max-w-3xl">
         {/* nombre y paralelo */}
         <div>
-          <label>Nombre del curso</label>
+          <label className="text-slate-900">Nombre del curso</label>
           <input
-            className="border rounded p-2 w-full"
+            className="border rounded p-2 w-full border-slate-900"
             value={nombre}
             onChange={e => setNombre(e.target.value)}
           />
         </div>
 
         <div>
-          <label>Paralelo</label>
+          <label className="text-slate-900">Paralelo</label>
           <input
-            className="border rounded p-2 w-full"
+            className="border rounded p-2 w-full border-slate-900"
             value={paralelo}
             onChange={e => setParalelo(e.target.value)}
           />
         </div>
 
         {/* asignar materias + profesores */}
-        <h2 className="font-semibold mt-6">Asignar materias al curso</h2>
+        <h2 className="font-semibold mt-6 text-slate-900">Asignar materias al curso</h2>
 
         {subjects.map(subj => {
-        const prof = teachers.find(t => t.materiaId === subj.id);
-        return (
+          const prof = teachers.find(t => t.materiaId === subj.id);
+
+          const isSelected = selectedSubjects.some(
+            s => s.subjectId === subj.id
+          );
+
+          return (
             <div
-            key={subj.id}
-            onClick={() => {
+              key={subj.id}
+              onClick={() => {
                 if (!prof) {
-                setError(`La materia ${subj.nombre} no tiene profesor asignado`);
-                return;
+                  setError(`La materia ${subj.nombre} no tiene profesor asignado`);
+                  return;
                 }
 
-                setSelectedSubjects(prev => [
-                ...prev,
-                {
-                    subjectId: subj.id,
-                    subjectName: subj.nombre,
-                    subjectSigla: subj.sigla,
-                    teacherUid: prof.uid,
-                    teacherName: prof.name,
-                },
-                ]);
-            }}
-            className={`p-3 border rounded cursor-pointer mb-2 ${
-                selectedSubjects.some(s => s.subjectId === subj.id)
-                ? "bg-green-100"
-                : "hover:bg-slate-100"
-            }`}
+                setError(null); // opcional: limpiar error
+
+                setSelectedSubjects(prev => {
+                  const alreadySelected = prev.some(
+                    s => s.subjectId === subj.id
+                  );
+
+                  if (alreadySelected) {
+                    // quitar la materia
+                    return prev.filter(s => s.subjectId !== subj.id);
+                  }
+
+                  // agregar la materia
+                  return [
+                    ...prev,
+                    {
+                      subjectId: subj.id,
+                      subjectName: subj.nombre,
+                      subjectSigla: subj.sigla,
+                      teacherUid: prof.uid,
+                      teacherName: prof.name,
+                    },
+                  ];
+                });
+              }}
+              className={`p-3 border rounded cursor-pointer mb-2 text-slate-900 ${
+                isSelected ? "bg-green-100" : "hover:bg-slate-100"
+              }`}
             >
-            <div className="font-semibold">{subj.sigla} - {subj.nombre}</div>
-            <div className="text-sm text-slate-600">
+              <div className="font-semibold">
+                {subj.sigla} - {subj.nombre}
+              </div>
+              <div className="text-sm text-slate-600">
                 Profesor: {prof ? prof.name : "❌ Ninguno asignado"}
+              </div>
             </div>
-            </div>
-        );
+          );
         })}
 
         {/* seleccionar estudiantes */}
-        <h2 className="font-semibold mt-6">Agregar estudiantes al curso</h2>
+        <h2 className="font-semibold mt-6 text-slate-900">Agregar estudiantes al curso</h2>
 
         {students.map(std => (
           <div
             key={std.uid}
             onClick={() => toggleStudent(std)}
-            className={`p-2 border cursor-pointer rounded ${
+            className={`p-2 border cursor-pointer rounded text-slate-900 ${
               selectedStudents.some(s => s.uid === std.uid)
                 ? "bg-green-100"
                 : ""

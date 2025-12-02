@@ -16,9 +16,6 @@ export class CreateCourseUseCase {
     if (!data.paralelo.trim()) {
       throw new Error("El paralelo es obligatorio");
     }
-    if (!data.materias || data.materias.length === 0) {
-      throw new Error("El curso debe tener al menos 1 materia");
-    }
 
     return this.repo.create(adminUid, data);
   }

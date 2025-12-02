@@ -104,14 +104,14 @@ export default function StudentPage() {
 
   return (
     <div className="p-8">
-      <h1 className="text-2xl font-bold mb-6">Crear estudiante</h1>
+      <h1 className="text-2xl font-bold mb-6 text-slate-900">Crear estudiante</h1>
 
       <form
         onSubmit={handleSubmit}
-        className="max-w-xl bg-white border rounded p-6"
+        className="max-w-xl bg-white border rounded p-6 border-slate-900"
       >
         {/* Nombre */}
-        <label className="block mb-3">
+        <label className="block mb-3 text-slate-900">
           <span className="text-sm">Nombre completo</span>
           <input
             value={nombreCompleto}
@@ -122,7 +122,7 @@ export default function StudentPage() {
         </label>
 
         {/* CI */}
-        <label className="block mb-3">
+        <label className="block mb-3 text-slate-900">
           <span className="text-sm">CI</span>
           <input
             value={ci}
@@ -133,7 +133,7 @@ export default function StudentPage() {
         </label>
 
         {/* Correo */}
-        <label className="block mb-3">
+        <label className="block mb-3 text-slate-900">
           <span className="text-sm">Correo</span>
           <input
             type="email"
@@ -145,7 +145,7 @@ export default function StudentPage() {
         </label>
 
         {/* Teléfono */}
-        <label className="block mb-3">
+        <label className="block mb-3 text-slate-900">
           <span className="text-sm">Teléfono</span>
           <input
             value={telefono}
@@ -156,7 +156,7 @@ export default function StudentPage() {
 
         {/* Curso SOLO si hay cursos creados */}
         {hayCursos ? (
-          <label className="block mb-3">
+          <label className="block mb-3 text-slate-900">
             <span className="text-sm">Curso</span>
             <select
               value={courseId}
@@ -179,14 +179,14 @@ export default function StudentPage() {
             </select>
           </label>
         ) : (
-          <p className="text-sm text-slate-600 mb-3">
+          <p className="text-sm text-slate-600 mb-3 text-slate-900">
             No hay cursos creados. Puede registrar al estudiante sin curso
             asignado.
           </p>
         )}
 
         {/* Descripción opcional */}
-        <label className="block mb-4">
+        <label className="block mb-4 text-slate-900">
           <span className="text-sm">Descripción / observaciones (opcional)</span>
           <textarea
             value={descripcion}

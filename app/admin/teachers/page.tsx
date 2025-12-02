@@ -98,15 +98,15 @@ export default function TeacherPage() {
 
   return (
     <div className="p-8">
-      <h1 className="text-2xl font-bold mb-6">Crear profesor</h1>
+      <h1 className="text-2xl font-bold mb-6 text-slate-900">Crear profesor</h1>
 
       <form
         onSubmit={handleSubmit}
-        className="max-w-xl bg-white border rounded p-6"
+        className="max-w-xl bg-white border rounded p-6 border-slate-900"
       >
         {/* Nombre */}
-        <label className="block mb-3">
-          <span className="text-sm">Nombre completo</span>
+        <label className="block mb-3 text-slate-900">
+          <span className="text-sm text-slate-900">Nombre completo</span>
           <input
             value={nombreCompleto}
             onChange={e => setNombreCompleto(e.target.value)}
@@ -116,8 +116,8 @@ export default function TeacherPage() {
         </label>
 
         {/* CI */}
-        <label className="block mb-3">
-          <span className="text-sm">CI</span>
+        <label className="block mb-3 text-slate-900">
+          <span className="text-sm text-slate-900">CI</span>
           <input
             value={ci}
             onChange={e => setCi(e.target.value)}
@@ -127,8 +127,8 @@ export default function TeacherPage() {
         </label>
 
         {/* Correo */}
-        <label className="block mb-3">
-          <span className="text-sm">Correo</span>
+        <label className="block mb-3 text-slate-900">
+          <span className="text-sm text-slate-900">Correo</span>
           <input
             type="email"
             value={email}
@@ -139,8 +139,8 @@ export default function TeacherPage() {
         </label>
 
         {/* Teléfono */}
-        <label className="block mb-3">
-          <span className="text-sm">Teléfono</span>
+        <label className="block mb-3 text-slate-900">
+          <span className="text-sm text-slate-900">Teléfono</span>
           <input
             value={telefono}
             onChange={e => setTelefono(e.target.value)}
@@ -149,8 +149,8 @@ export default function TeacherPage() {
         </label>
 
         {/* Materia (select) */}
-        <label className="block mb-4">
-          <span className="text-sm">Materia</span>
+        <label className="block mb-4 text-slate-900">
+          <span className="text-sm text-slate-900">Materia</span>
           <select
             value={materiaId}
             onChange={e => {
