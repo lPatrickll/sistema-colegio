@@ -16,6 +16,11 @@ type Subject = {
   sigla: string;
 };
 
+type Level = {
+  id: string;
+  nombre: string;
+};
+
 export default function AdminSubjectsPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
@@ -25,43 +30,65 @@ export default function AdminSubjectsPage() {
   const [area, setArea] = useState("");
   const [nivelId, setNivelId] = useState("");
 
+  const [levels, setLevels] = useState<Level[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [loadingLevels, setLoadingLevels] = useState(true);
+  const [loadingSubjects, setLoadingSubjects] = useState(true);
+
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [loadingSubjects, setLoadingSubjects] = useState(true);
-
   useEffect(() => {
     if (loading) return;
-    if (!user) {
-      router.push("/login");
-      return;
+    if (!user) return router.push("/login");
+
+    const isAdmin = user.roles?.some(r => r.toUpperCase() === "ADMIN");
+    if (!isAdmin) router.push("/");
+  }, [user, loading, router]);
+
+  useEffect(() => {
+    async function loadLevels() {
+      try {
+        const snap = await getDocs(collection(db, "levels")); // <--- colección niveles
+        const list: Level[] = [];
+        snap.forEach(doc => {
+          const d = doc.data() as { nombre: string };
+          list.push({ id: doc.id, nombre: d.nombre });
+        });
+
+        list.sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+        setLevels(list);
+      } catch (err) {
+        console.error("Error al cargar niveles:", err);
+      } finally {
+        setLoadingLevels(false);
+      }
     }
 
-    const isAdmin = user.roles?.some((r: string) => r.toUpperCase() === "ADMIN");
-    if (!isAdmin) {
-      router.push("/");
-      return;
-    }
-  }, [user, loading, router]);
+    loadLevels();
+  }, []);
 
   useEffect(() => {
     async function loadSubjects() {
       try {
         const snap = await getDocs(collection(db, "subjects"));
         const list: Subject[] = [];
+
         snap.forEach(doc => {
           const d = doc.data() as { nombre: string; sigla: string };
           list.push({ id: doc.id, nombre: d.nombre, sigla: d.sigla });
         });
+
         setSubjects(list);
       } catch (err) {
-        console.error(err);
+        console.error("Error al cargar materias:", err);
       } finally {
         setLoadingSubjects(false);
       }
     }
+
     loadSubjects();
   }, []);
 
@@ -94,15 +121,16 @@ export default function AdminSubjectsPage() {
       setNivelId("");
     } catch (err: any) {
       console.error(err);
-      setError(err.message ?? "Error al crear la materia");
+      setError(err.message ?? "Error al registrar materia");
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (loading || !user) return <p className="p-4">Verificando sesión...</p>;
+  if (loading || !user)
+    return <p className="p-4">Verificando sesión...</p>;
 
-  const isAdmin = user.roles?.some((r: string) => r.toUpperCase() === "ADMIN");
+  const isAdmin = user.roles?.some(r => r.toUpperCase() === "ADMIN");
   if (!isAdmin) return <p className="p-4">No autorizado.</p>;
 
   return (
@@ -146,13 +174,25 @@ export default function AdminSubjectsPage() {
         </label>
 
         <label className="block text-slate-900">
-          <span className="text-sm">Nivel (opcional, por ahora texto)</span>
-          <input
-            value={nivelId}
-            onChange={e => setNivelId(e.target.value)}
-            className="w-full border rounded p-2"
-            placeholder="Ej: secundaria"
-          />
+          <span className="text-sm">Nivel</span>
+
+          {loadingLevels ? (
+            <p className="text-xs text-slate-600">Cargando niveles...</p>
+          ) : (
+            <select
+              value={nivelId}
+              onChange={e => setNivelId(e.target.value)}
+              className="w-full border rounded p-2"
+            >
+              <option value="">Sin nivel</option>
+
+              {levels.map(level => (
+                <option key={level.id} value={level.id}>
+                  {level.nombre}
+                </option>
+              ))}
+            </select>
+          )}
         </label>
 
         {error && <p className="text-red-600 text-sm mt-2">{error}</p>}

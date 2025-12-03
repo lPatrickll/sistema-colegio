@@ -7,7 +7,7 @@ export async function POST(req: Request) {
   try {
     const data = await req.json();
 
-    const { adminUid, nombre, sigla } = data;
+    const { adminUid, nombre, sigla, nivelId, area } = data;
 
     if (!adminUid) {
       return NextResponse.json({ error: "Falta adminUid" }, { status: 400 });
@@ -28,6 +28,8 @@ export async function POST(req: Request) {
     await adminDb.collection("subjects").add({
       nombre,
       sigla,
+      nivelId: nivelId ?? null,
+      area: area ?? null,
       createdAt: new Date(),
       createdBy: adminUid,
     });
