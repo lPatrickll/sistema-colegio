@@ -1,4 +1,4 @@
-// src/Course/domain/course.types.ts
+// src/components/Course/domain/course.types.ts
 
 export interface CourseSubject {
   subjectId: string;
@@ -17,7 +17,8 @@ export interface CourseStudent {
 export interface CreateCourseDTO {
   nombre: string;
   paralelo: string;
-  materias: CourseSubject[];
-  estudiantes: CourseStudent[]; // puede estar vacío
+  gestionId: string;
+  turno?: string;
+  cuposMaximos?: number;
   createdBy: string;
 }

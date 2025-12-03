@@ -1,4 +1,4 @@
-// src/components/RegisterStudent/application/createStudent.usecase.ts
+// src/components/Student/application/createStudent.usecase.ts
 import { CreateStudentDTO } from "../domain/student.types";
 import { StudentApiRepository } from "../repository/student.api.repository";
 
@@ -10,16 +10,16 @@ export class CreateStudentUseCase {
   }
 
   async execute(adminUid: string, data: CreateStudentDTO) {
-    if (!data.nombreCompleto.trim()) {
-      throw new Error("El nombre es obligatorio");
+    if (!data.nombre.trim() || !data.apellido.trim()) {
+      throw new Error("Nombre y apellido son obligatorios");
     }
     if (!data.ci.trim()) {
       throw new Error("El CI es obligatorio");
     }
-    if (!data.email.trim()) {
-      throw new Error("El correo es obligatorio");
+    if (!data.fechaNac) {
+      throw new Error("La fecha de nacimiento es obligatoria");
     }
 
-    return this.repo.createStudent(adminUid, data);
+    return this.repo.create(adminUid, data);
   }
 }

@@ -17,7 +17,7 @@ export default function StudentHome() {
       return;
     }
 
-    if (user.role !== "student") {
+    if (!user.roles.includes("student")) {
       router.push("/");
     }
   }, [user, loading, router]);

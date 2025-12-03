@@ -17,7 +17,7 @@ export default function TeacherHome() {
       return;
     }
 
-    if (user.role !== "teacher") {
+    if (!user.roles.includes("teacher")) {
       router.push("/");
     }
   }, [user, loading, router]);

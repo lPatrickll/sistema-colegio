@@ -1,3 +1,4 @@
+// src/app/admin/layout.tsx
 "use client";
 
 import { useAuth } from "@/components/Auth/AuthContext";
@@ -21,6 +22,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
+  const roles = user?.roles ?? [];
+  const isAdmin = roles.some((r: string) => r.toUpperCase() === "ADMIN");
+
   useEffect(() => {
     if (loading) return;
 
@@ -29,13 +33,21 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       return;
     }
 
-    if (user.role !== "admin") {
+    if (!isAdmin) {
       router.push("/");
     }
-  }, [user, loading, router]);
+  }, [user, loading, isAdmin, router]);
 
-  if (loading || !user || user.role !== "admin") {
+  if (loading) {
     return <p className="p-4">Verificando permisos...</p>;
+  }
+
+  if (!user) {
+    return <p className="p-4">Redirigiendo a login...</p>;
+  }
+
+  if (!isAdmin) {
+    return <p className="p-4">No autorizado.</p>;
   }
 
   return (

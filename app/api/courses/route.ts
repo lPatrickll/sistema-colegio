@@ -1,11 +1,14 @@
-// app/api/createCourse/route.ts
+// app/api/courses/route.ts
 import { NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
 
 async function isAdmin(uid: string) {
   const doc = await adminDb.collection("users").doc(uid).get();
   if (!doc.exists) return false;
-  return doc.data()?.role === "admin";
+
+  const data = doc.data();
+  const roles = (data?.roles ?? []) as string[];
+  return Array.isArray(roles) && roles.some(r => r.toUpperCase() === "ADMIN");
 }
 
 export async function POST(req: Request) {
@@ -16,8 +19,9 @@ export async function POST(req: Request) {
       adminUid,
       nombre,
       paralelo,
-      materias,
-      estudiantes,
+      gestionId,
+      turno,
+      cuposMaximos,
       createdBy,
     } = body;
 
@@ -36,16 +40,9 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!nombre || !paralelo) {
+    if (!nombre || !paralelo || !gestionId) {
       return NextResponse.json(
-        { error: "Nombre y paralelo son obligatorios" },
-        { status: 400 }
-      );
-    }
-
-    if (!materias || !Array.isArray(materias) || materias.length === 0) {
-      return NextResponse.json(
-        { error: "El curso debe tener al menos 1 materia" },
+        { error: "Nombre, paralelo y gestión son obligatorios" },
         { status: 400 }
       );
     }
@@ -53,8 +50,9 @@ export async function POST(req: Request) {
     await adminDb.collection("courses").add({
       nombre,
       paralelo,
-      materias,
-      estudiantes: estudiantes ?? [],
+      gestionId,
+      turno: turno ?? null,
+      cuposMaximos: typeof cuposMaximos === "number" ? cuposMaximos : null,
       createdAt: new Date(),
       createdBy: createdBy ?? adminUid,
     });

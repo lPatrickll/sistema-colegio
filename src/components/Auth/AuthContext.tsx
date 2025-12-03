@@ -15,7 +15,7 @@ import { doc, getDoc } from "firebase/firestore";
 type AppUser = {
   uid: string;
   email: string | null;
-  role?: string;
+  roles: string[];
 };
 
 type AuthContextType = {
@@ -43,16 +43,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userDocRef = doc(db, "users", firebaseUser.uid);
       const userDoc = await getDoc(userDocRef);
 
-      let role: string | undefined = undefined;
+      let roles: string[] = [];
+
       if (userDoc.exists()) {
-        const data = userDoc.data() as { role?: string };
-        role = data.role;
+        const data = userDoc.data() as { roles?: string[]; role?: string };
+
+        if (Array.isArray(data.roles)) {
+          roles = data.roles;
+        } else if (data.role) {
+          roles = [data.role.toUpperCase()];
+        }
       }
 
       setUser({
         uid: firebaseUser.uid,
         email: firebaseUser.email,
-        role,
+        roles,
       });
 
       setLoading(false);

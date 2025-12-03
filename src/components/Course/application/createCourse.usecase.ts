@@ -13,8 +13,13 @@ export class CreateCourseUseCase {
     if (!data.nombre.trim()) {
       throw new Error("El nombre del curso es obligatorio");
     }
+
     if (!data.paralelo.trim()) {
       throw new Error("El paralelo es obligatorio");
+    }
+
+    if (!data.gestionId.trim()) {
+      throw new Error("La gestión es obligatoria");
     }
 
     return this.repo.create(adminUid, data);

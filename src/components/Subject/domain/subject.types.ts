@@ -1,15 +1,8 @@
-// src/Subject/domain/subject.types.ts
-
-export interface Subject {
-  id: string;
-  nombre: string;
-  sigla: string;
-  createdAt: Date;
-  createdBy: string;
-}
+// src/components/Subject/domain/subject.types.ts
 
 export interface CreateSubjectDTO {
   nombre: string;
   sigla: string;
-  createdBy: string;
+  nivelId?: string;
+  area?: string;
 }

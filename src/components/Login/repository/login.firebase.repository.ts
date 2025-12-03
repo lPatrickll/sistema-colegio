@@ -11,21 +11,26 @@ export class LoginFirebaseRepository {
     const result = await signInWithEmailAndPassword(auth, email, password);
     const user = result.user;
 
-    let role: string | undefined = undefined;
+    let roles: string[] = [];
 
     const userDocRef = doc(db, "users", user.uid);
     const userDoc = await getDoc(userDocRef);
 
     if (userDoc.exists()) {
-      const data = userDoc.data() as { role?: string };
-      role = data.role;
+      const data = userDoc.data() as { roles?: string[]; role?: string };
+
+      if (Array.isArray(data.roles)) {
+        roles = data.roles;
+      } else if (data.role) {
+        roles = [data.role.toUpperCase()];
+      }
     }
 
     const authUser: AuthUser = {
       uid: user.uid,
       email: user.email,
       displayName: user.displayName,
-      role,
+      roles,
     };
 
     return authUser;

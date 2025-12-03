@@ -1,11 +1,12 @@
+// src/app/admin/teachers/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { useAuth } from "@/components/Auth/AuthContext";
-import { CreateTeacherUseCase } from "@/components/RegisterTeacher/application/createTeacher.usecase";
+import { db } from "@/lib/firebase";
+import { collection, getDocs } from "firebase/firestore";
+import { CreateTeacherUseCase } from "@/components/Teacher/application/createTeacher.usecase";
 
 const createTeacherUseCase = new CreateTeacherUseCase();
 
@@ -15,35 +16,24 @@ type SubjectOption = {
   sigla: string;
 };
 
-export default function TeacherPage() {
+export default function AdminTeachersPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
 
-  const [subjects, setSubjects] = useState<SubjectOption[]>([]);
-  const [nombreCompleto, setNombreCompleto] = useState("");
+  const [nombre, setNombre] = useState("");
+  const [apellido, setApellido] = useState("");
   const [ci, setCi] = useState("");
+  const [profesion, setProfesion] = useState("");
+  const [pagoPorHora, setPagoPorHora] = useState("0");
   const [email, setEmail] = useState("");
-  const [telefono, setTelefono] = useState("");
+  const [password, setPassword] = useState("");
+
   const [materiaId, setMateriaId] = useState("");
-  const [materiaNombre, setMateriaNombre] = useState("");
-  const [materiaSigla, setMateriaSigla] = useState("");
+  const [subjects, setSubjects] = useState<SubjectOption[]>([]);
 
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    async function loadSubjects() {
-      const snap = await getDocs(collection(db, "subjects"));
-      const list: SubjectOption[] = [];
-      snap.forEach(doc => {
-        const d = doc.data() as { nombre: string; sigla: string };
-        list.push({ id: doc.id, nombre: d.nombre, sigla: d.sigla });
-      });
-      setSubjects(list);
-    }
-    loadSubjects();
-  }, []);
 
   useEffect(() => {
     if (loading) return;
@@ -51,14 +41,40 @@ export default function TeacherPage() {
       router.push("/login");
       return;
     }
-    if (user.role !== "admin") {
+
+    const isAdmin = user.roles?.some((r: string) => r.toUpperCase() === "ADMIN");
+    if (!isAdmin) {
       router.push("/");
+      return;
     }
   }, [user, loading, router]);
+
+  useEffect(() => {
+    async function loadSubjects() {
+      try {
+        const snap = await getDocs(collection(db, "subjects"));
+        const list: SubjectOption[] = [];
+        snap.forEach(doc => {
+          const d = doc.data() as { nombre: string; sigla: string };
+          list.push({ id: doc.id, nombre: d.nombre, sigla: d.sigla });
+        });
+        setSubjects(list);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    loadSubjects();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+
+    const selectedSubject = subjects.find(s => s.id === materiaId);
+    if (!selectedSubject) {
+      setError("Debes seleccionar una materia válida");
+      return;
+    }
 
     setError(null);
     setSuccess(null);
@@ -66,58 +82,72 @@ export default function TeacherPage() {
 
     try {
       await createTeacherUseCase.execute(user.uid, {
-        nombreCompleto,
+        nombre,
+        apellido,
         ci,
+        profesion,
+        pagoPorHora: Number(pagoPorHora),
         email,
-        telefono,
-        materiaId,
-        materiaNombre,
-        materiaSigla,
-        createdBy: user.uid,
+        password,
+        materiaId: selectedSubject.id,
+        materiaNombre: selectedSubject.nombre,
+        materiaSigla: selectedSubject.sigla,
       });
 
-      setSuccess("Profesor creado correctamente.");
-      setNombreCompleto("");
+      setSuccess("Docente registrado correctamente.");
+      setNombre("");
+      setApellido("");
       setCi("");
+      setProfesion("");
+      setPagoPorHora("0");
       setEmail("");
-      setTelefono("");
+      setPassword("");
       setMateriaId("");
-      setMateriaNombre("");
-      setMateriaSigla("");
     } catch (err: any) {
       console.error(err);
-      setError(err.message ?? "Error al crear el profesor.");
+      setError(err.message ?? "Error al registrar docente");
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (loading || !user || user.role !== "admin") {
-    return <p className="p-4">Verificando permisos...</p>;
-  }
+  if (loading || !user) return <p className="p-4">Verificando sesión...</p>;
+
+  const isAdmin = user.roles?.some((r: string) => r.toUpperCase() === "ADMIN");
+  if (!isAdmin) return <p className="p-4">No autorizado.</p>;
 
   return (
     <div className="p-8">
-      <h1 className="text-2xl font-bold mb-6 text-slate-900">Crear profesor</h1>
+      <h1 className="text-2xl font-bold mb-4 text-slate-900">Registrar profesor</h1>
 
       <form
         onSubmit={handleSubmit}
-        className="max-w-xl bg-white border rounded p-6 border-slate-900"
+        className="space-y-4 max-w-xl bg-white border rounded p-6 border-slate-200"
       >
-        {/* Nombre */}
-        <label className="block mb-3 text-slate-900">
-          <span className="text-sm text-slate-900">Nombre completo</span>
-          <input
-            value={nombreCompleto}
-            onChange={e => setNombreCompleto(e.target.value)}
-            className="w-full border rounded p-2"
-            required
-          />
-        </label>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <label className="block text-slate-900">
+            <span className="text-sm">Nombre</span>
+            <input
+              value={nombre}
+              onChange={e => setNombre(e.target.value)}
+              className="w-full border rounded p-2"
+              required
+            />
+          </label>
 
-        {/* CI */}
-        <label className="block mb-3 text-slate-900">
-          <span className="text-sm text-slate-900">CI</span>
+          <label className="block text-slate-900">
+            <span className="text-sm">Apellido</span>
+            <input
+              value={apellido}
+              onChange={e => setApellido(e.target.value)}
+              className="w-full border rounded p-2"
+              required
+            />
+          </label>
+        </div>
+
+        <label className="block text-slate-900">
+          <span className="text-sm">CI</span>
           <input
             value={ci}
             onChange={e => setCi(e.target.value)}
@@ -126,9 +156,30 @@ export default function TeacherPage() {
           />
         </label>
 
-        {/* Correo */}
-        <label className="block mb-3 text-slate-900">
-          <span className="text-sm text-slate-900">Correo</span>
+        <label className="block text-slate-900">
+          <span className="text-sm">Profesión</span>
+          <input
+            value={profesion}
+            onChange={e => setProfesion(e.target.value)}
+            className="w-full border rounded p-2"
+          />
+        </label>
+
+        <label className="block text-slate-900">
+          <span className="text-sm">Pago por hora</span>
+          <input
+            type="number"
+            value={pagoPorHora}
+            onChange={e => setPagoPorHora(e.target.value)}
+            className="w-full border rounded p-2"
+            min={0}
+          />
+        </label>
+
+        <hr />
+
+        <label className="block text-slate-900">
+          <span className="text-sm">Correo</span>
           <input
             type="email"
             value={email}
@@ -138,49 +189,43 @@ export default function TeacherPage() {
           />
         </label>
 
-        {/* Teléfono */}
-        <label className="block mb-3 text-slate-900">
-          <span className="text-sm text-slate-900">Teléfono</span>
+        <label className="block text-slate-900">
+          <span className="text-sm">Contraseña</span>
           <input
-            value={telefono}
-            onChange={e => setTelefono(e.target.value)}
+            type="password"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
             className="w-full border rounded p-2"
+            required
           />
         </label>
 
-        {/* Materia (select) */}
-        <label className="block mb-4 text-slate-900">
-          <span className="text-sm text-slate-900">Materia</span>
+        <label className="block text-slate-900">
+          <span className="text-sm">Materia asignada</span>
           <select
             value={materiaId}
-            onChange={e => {
-              const id = e.target.value;
-              setMateriaId(id);
-              const selected = subjects.find(s => s.id === id);
-              setMateriaNombre(selected ? selected.nombre : "");
-              setMateriaSigla(selected ? selected.sigla : "");
-            }}
+            onChange={e => setMateriaId(e.target.value)}
             className="w-full border rounded p-2"
             required
           >
-            <option value="">Seleccione una materia</option>
+            <option value="">Selecciona una materia</option>
             {subjects.map(s => (
               <option key={s.id} value={s.id}>
-                {s.sigla} - {s.nombre}
+                {s.sigla} — {s.nombre}
               </option>
             ))}
           </select>
         </label>
 
-        {error && <p className="text-red-600 text-sm">{error}</p>}
-        {success && <p className="text-green-600 text-sm">{success}</p>}
+        {error && <p className="text-red-600 text-sm mt-2">{error}</p>}
+        {success && <p className="text-green-600 text-sm mt-2">{success}</p>}
 
         <button
           type="submit"
           disabled={submitting}
-          className="mt-2 w-full p-2 bg-green-600 text-white rounded"
+          className="bg-green-600 text-white px-4 py-2 rounded mt-4"
         >
-          {submitting ? "Guardando..." : "Crear profesor"}
+          {submitting ? "Guardando..." : "Registrar profesor"}
         </button>
       </form>
     </div>

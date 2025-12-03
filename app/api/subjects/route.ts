@@ -1,12 +1,7 @@
-// src/app/api/createSubject/route.ts
+// src/app/api/subjects/route.ts
 import { NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
-
-async function isAdmin(uid: string) {
-  const doc = await adminDb.collection("users").doc(uid).get();
-  if (!doc.exists) return false;
-  return doc.data()?.role === "admin";
-}
+import isAdmin from "../_utils/isAdmin";
 
 export async function POST(req: Request) {
   try {
