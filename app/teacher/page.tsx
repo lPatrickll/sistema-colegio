@@ -1,34 +1,33 @@
 // src/app/teacher/page.tsx
-"use client";
+import Link from "next/link";
 
-import { useAuth } from "@/components/Auth/AuthContext";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-
-export default function TeacherHome() {
-  const { user, loading } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (loading) return;
-
-    if (!user) {
-      router.push("/login");
-      return;
-    }
-
-    if (!user.roles.includes("teacher")) {
-      router.push("/");
-    }
-  }, [user, loading, router]);
-
-  if (loading || !user) return <p>Cargando...</p>;
-
+export default function TeacherHomePage() {
   return (
-    <main className="p-10 text-center">
-      <h1 className="text-2xl font-bold">
-        Bienvenido profesor {user.email}
-      </h1>
-    </main>
+    <div className="p-8 space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold mb-2 text-slate-900">
+          Panel del profesor
+        </h1>
+        <p className="text-sm text-slate-600">
+          Accede a tus cursos, registra asistencia y gestiona tus clases.
+        </p>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <Link
+          href="/teacher/attendance"
+          className="border bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition block"
+        >
+          <h2 className="font-semibold mb-1 text-slate-900">
+            Tomar asistencia
+          </h2>
+          <p className="text-sm text-slate-600">
+            Ver tus grupos de clase y registrar la asistencia de los estudiantes.
+          </p>
+        </Link>
+
+        {/* Aquí luego puedes agregar más opciones (notas, etc.) */}
+      </div>
+    </div>
   );
 }

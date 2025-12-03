@@ -1,12 +1,13 @@
+// app/api/_utils/isAdmin.ts
 import { adminDb } from "@/lib/firebase-admin";
 
-async function isAdmin(uid: string) {
-  const doc = await adminDb.collection("users").doc(uid).get();
-  if (!doc.exists) return false;
+export default async function isAdmin(userUid: string): Promise<boolean> {
+  if (!userUid) return false;
 
-  const data = doc.data();
-  const roles = (data?.roles ?? []) as string[];
-  return Array.isArray(roles) && roles.some(r => r.toUpperCase() === "ADMIN");
+  const snap = await adminDb.collection("users").doc(userUid).get();
+  if (!snap.exists) return false;
+
+  const data = snap.data() as any;
+
+  return data.roles?.includes("ADMIN");
 }
-
-export default isAdmin;

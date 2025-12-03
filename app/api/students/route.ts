@@ -80,17 +80,28 @@ export async function POST(req: Request) {
       createdAt: new Date(),
     });
 
-    const studentId = studentRef.id;
+     const studentId = studentRef.id;
 
     if (gestionId && courseId) {
-      await adminDb.collection("inscripciones").add({
-        estudianteId: studentId,
-        gestionId,
-        courseId,
-        fechaInscripcion: new Date(),
-        tipoInscripcion: "REGULAR",
-        estado: "ACTIVO",
-      });
+      const inscriptionsRef = adminDb.collection("inscriptions");
+
+      const existenteSnap = await inscriptionsRef
+        .where("studentId", "==", studentId)
+        .where("courseId", "==", courseId)
+        .where("gestionId", "==", gestionId)
+        .where("estado", "==", "ACTIVO")
+        .get();
+
+      if (existenteSnap.empty) {
+        await inscriptionsRef.add({
+          studentId,
+          gestionId,
+          courseId,
+          fechaInscripcion: new Date(),
+          tipoInscripcion: "REGULAR",
+          estado: "ACTIVO",
+        });
+      }
     }
 
     return NextResponse.json({ success: true });

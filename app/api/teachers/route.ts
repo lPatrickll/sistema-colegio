@@ -1,15 +1,7 @@
 // src/app/api/teachers/route.ts
 import { NextResponse } from "next/server";
 import { adminDb, adminAuth } from "@/lib/firebase-admin";
-
-async function isAdmin(uid: string) {
-  const doc = await adminDb.collection("users").doc(uid).get();
-  if (!doc.exists) return false;
-
-  const data = doc.data();
-  const roles = (data?.roles ?? []) as string[];
-  return Array.isArray(roles) && roles.some(r => r.toUpperCase() === "admin");
-}
+import isAdmin from "../_utils/isAdmin";
 
 export async function POST(req: Request) {
   try {
@@ -64,6 +56,8 @@ export async function POST(req: Request) {
 
     await adminDb.collection("teachers").doc(uid).set({
       uid,
+      nombre,
+      apellido,
       nombreCompleto: `${nombre} ${apellido}`,
       ci,
       profesion,
