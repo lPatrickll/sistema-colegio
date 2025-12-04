@@ -17,7 +17,7 @@ const links = [
 ];
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -72,6 +72,19 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             </Link>
           ))}
         </nav>
+        <button
+          onClick={async () => {
+            try {
+              await logout();
+              router.push("/login");
+            } catch (err) {
+              console.error("Error al cerrar sesión:", err);
+            }
+          }}
+          className="p-3 m-2 rounded bg-red-600 text-white text-sm hover:bg-red-700"
+        >
+          Cerrar sesión
+        </button>
       </aside>
 
       <main className="flex-1 bg-slate-50">{children}</main>
