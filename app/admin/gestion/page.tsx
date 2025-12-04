@@ -42,6 +42,39 @@ type ScheduleInput = {
   horaFin: string;
 };
 
+type ClassSchedule = {
+  id: string;
+  groupId: string;
+  diaSemana: string;
+  horaInicio: string;
+  horaFin: string;
+  courseId: string;
+  subjectId: string;
+};
+
+type ClassGroup = {
+  id: string;
+  gestionId: string;
+  courseId: string;
+  subjectId: string;
+  teacherId: string;
+  horasSemana: number;
+  courseName: string;
+  courseParalelo?: string;
+  subjectName: string;
+  subjectSigla: string;
+  teacherName: string;
+  schedules: ClassSchedule[];
+};
+
+type CourseTimetable = {
+  courseId: string;
+  courseName: string;
+  courseParalelo?: string;
+  groups: ClassGroup[];
+};
+
+
 export default function AdminGestionPage() {
   const { user, loading } = useAuth();
 
@@ -71,6 +104,102 @@ export default function AdminGestionPage() {
   const [savingGroup, setSavingGroup] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+
+  const [courseTimetables, setCourseTimetables] = useState<CourseTimetable[]>([]);
+  const [openCourseIds, setOpenCourseIds] = useState<string[]>([]);
+  const [loadingTimetable, setLoadingTimetable] = useState(false);
+
+  const fetchTimetableForGestion = async (gestionId: string) => {
+    try {
+      setLoadingTimetable(true);
+
+      const groupsSnap = await getDocs(
+        query(
+          collection(db, "classGroups"),
+          where("gestionId", "==", gestionId)
+        )
+      );
+
+      const groupsRaw = groupsSnap.docs.map(docSnap => ({
+        id: docSnap.id,
+        ...(docSnap.data() as any),
+      }));
+
+      if (groupsRaw.length === 0) {
+        setCourseTimetables([]);
+        return;
+      }
+
+      const groupIds = groupsRaw.map(g => g.id as string);
+      let allSchedules: ClassSchedule[] = [];
+
+      for (let i = 0; i < groupIds.length; i += 10) {
+        const chunk = groupIds.slice(i, i + 10);
+        const schedSnap = await getDocs(
+          query(
+            collection(db, "classSchedules"),
+            where("groupId", "in", chunk)
+          )
+        );
+
+        const schedChunk: ClassSchedule[] = schedSnap.docs.map(docSnap => ({
+          id: docSnap.id,
+          ...(docSnap.data() as any),
+        })) as any;
+
+        allSchedules = allSchedules.concat(schedChunk);
+      }
+
+      const schedulesByGroup: Record<string, ClassSchedule[]> = {};
+      allSchedules.forEach(s => {
+        if (!schedulesByGroup[s.groupId]) {
+          schedulesByGroup[s.groupId] = [];
+        }
+        schedulesByGroup[s.groupId].push(s);
+      });
+
+      const groups: ClassGroup[] = groupsRaw.map(g => ({
+        ...(g as any),
+        schedules: schedulesByGroup[g.id] || [],
+      }));
+
+      const byCourse: Record<string, CourseTimetable> = {};
+
+      groups.forEach(g => {
+        if (!byCourse[g.courseId]) {
+          byCourse[g.courseId] = {
+            courseId: g.courseId,
+            courseName: g.courseName,
+            courseParalelo: g.courseParalelo,
+            groups: [],
+          };
+        }
+        byCourse[g.courseId].groups.push(g);
+      });
+
+      const list = Object.values(byCourse).sort((a, b) =>
+        (a.courseName + (a.courseParalelo || "")).localeCompare(
+          b.courseName + (b.courseParalelo || "")
+        )
+      );
+
+      setCourseTimetables(list);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message ?? "Error cargando horarios de la gestión");
+    } finally {
+      setLoadingTimetable(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!selectedGestionId) {
+      setCourseTimetables([]);
+      return;
+    }
+    fetchTimetableForGestion(selectedGestionId);
+  }, [selectedGestionId]);
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -282,6 +411,9 @@ export default function AdminGestionPage() {
       setSelectedSubjectId("");
       setSelectedTeacherId("");
       setHorasSemana(2);
+      if (selectedGestionId) {
+        await fetchTimetableForGestion(selectedGestionId);
+      }
     } catch (e: any) {
       console.error(e);
       setError(e.message ?? "Error al crear grupo de clase");
@@ -573,6 +705,143 @@ export default function AdminGestionPage() {
           </button>
         </div>
       </section>
+
+      <section className="border rounded-lg p-4 bg-white shadow-sm space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold text-slate-900">
+            Horario por curso (vista colegio)
+          </h2>
+          <span className="text-xs text-slate-500">
+            Gestión:{" "}
+            {gestiones.find(g => g.id === selectedGestionId)?.anio ?? "-"}
+          </span>
+        </div>
+
+        {!selectedGestionId && (
+          <p className="text-sm text-slate-500">
+            Selecciona una gestión para ver los horarios de los cursos.
+          </p>
+        )}
+
+        {selectedGestionId && (
+          <>
+            {loadingTimetable ? (
+              <p className="text-sm text-slate-500">Cargando horarios...</p>
+            ) : courseTimetables.length === 0 ? (
+              <p className="text-sm text-slate-500">
+                Aún no registraste grupos de clase para esta gestión.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {courseTimetables.map(course => {
+                  const isOpen = openCourseIds.includes(course.courseId);
+
+                  return (
+                    <div key={course.courseId} className="border rounded-md">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setOpenCourseIds(prev =>
+                            prev.includes(course.courseId)
+                              ? prev.filter(id => id !== course.courseId)
+                              : [...prev, course.courseId]
+                          )
+                        }
+                        className="w-full flex items-center justify-between px-3 py-2 text-sm bg-slate-50 hover:bg-slate-100"
+                      >
+                        <span className="font-medium text-slate-900">
+                          {course.courseName}{" "}
+                          {course.courseParalelo
+                            ? `- ${course.courseParalelo}`
+                            : ""}
+                        </span>
+                        <span className="text-xs text-slate-500">
+                          {isOpen ? "Ocultar horario ▲" : "Ver horario ▼"}
+                        </span>
+                      </button>
+
+                      {isOpen && (
+                        <div className="p-3 bg-white border-t">
+                          <table className="w-full text-xs border-collapse">
+                            <thead>
+                              <tr className="bg-slate-50">
+                                <th className="border px-2 py-1 text-left text-slate-700">
+                                  Día
+                                </th>
+                                <th className="border px-2 py-1 text-left text-slate-700">
+                                  Clases
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES"].map(
+                                day => {
+                                  const dayLabelMap: Record<string, string> = {
+                                    LUNES: "Lunes",
+                                    MARTES: "Martes",
+                                    MIERCOLES: "Miércoles",
+                                    JUEVES: "Jueves",
+                                    VIERNES: "Viernes",
+                                  };
+
+                                  const slots = course.groups
+                                    .flatMap(g =>
+                                      (g.schedules || []).map(s => ({
+                                        ...s,
+                                        group: g,
+                                      }))
+                                    )
+                                    .filter(s => s.diaSemana === day)
+                                    .sort((a, b) =>
+                                      a.horaInicio.localeCompare(b.horaInicio)
+                                    );
+
+                                  return (
+                                    <tr key={day}>
+                                      <td className="border px-2 py-1 align-top font-medium text-slate-700">
+                                        {dayLabelMap[day] ?? day}
+                                      </td>
+                                      <td className="border px-2 py-1">
+                                        {slots.length === 0 ? (
+                                          <span className="text-slate-400">
+                                            Sin clases registradas
+                                          </span>
+                                        ) : (
+                                          <div className="space-y-1">
+                                            {slots.map(slot => (
+                                              <div
+                                                key={slot.id}
+                                                className="px-2 py-1 rounded bg-slate-50 border text-slate-900"
+                                              >
+                                                <div className="font-medium">
+                                                  {slot.group.subjectName}
+                                                </div>
+                                                <div className="text-[11px] text-slate-600">
+                                                  {slot.horaInicio} - {slot.horaFin} ·{" "}
+                                                  {slot.group.teacherName}
+                                                </div>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </td>
+                                    </tr>
+                                  );
+                                }
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        )}
+      </section>
+
     </div>
   );
 }
