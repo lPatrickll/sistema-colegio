@@ -363,6 +363,50 @@ export default function AdminGestionPage() {
     setSchedules(prev => prev.filter((_, i) => i !== index));
   };
 
+  const handleDesactivarGestion = async (gestionId: string) => {
+    try {
+      setError(null);
+      setMessage(null);
+      if (!user) {
+        setError("Usuario no autenticado");
+        return;
+      }
+
+      const resp = await fetch("/api/gestiones/desactivar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          adminUid: user.uid,
+          gestionId,
+        }),
+      });
+
+      const data = await resp.json();
+      if (!resp.ok) {
+        setError(data.error || "Error al desactivar gestión");
+        return;
+      }
+
+      setGestiones(prev =>
+        prev.map(g =>
+          g.id === gestionId
+            ? { ...g, isActive: false, estado: "CERRADA" }
+            : g
+        )
+      );
+
+      if (activeGestionId === gestionId) {
+        setActiveGestionId(null);
+        setSelectedGestionId("");
+      }
+
+      setMessage("Gestión desactivada correctamente");
+    } catch (e: any) {
+      console.error(e);
+      setError(e.message ?? "Error al desactivar gestión");
+    }
+  };
+
   const handleCrearGrupoClase = async () => {
     try {
       setError(null);
@@ -478,41 +522,48 @@ export default function AdminGestionPage() {
         </div>
 
         <div className="mt-4">
-          <h3 className="text-sm font-semibold text-slate-800 mb-2">
-            Gestiones registradas
-          </h3>
-          <div className="space-y-2">
-            {gestiones.length === 0 && (
-              <p className="text-sm text-slate-500">No hay gestiones registradas.</p>
-            )}
-            {gestiones.map(g => (
-              <div
-                key={g.id}
-                className="flex items-center justify-between border rounded-md px-3 py-2 text-sm"
-              >
-                <div>
-                  <div className="font-medium text-slate-900">
-                    {g.anio}{" "}
-                    {g.isActive && (
-                      <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded bg-green-100 text-green-700 text-xs">
-                        ACTIVA
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-xs text-slate-500">Estado: {g.estado}</div>
+        <h3 className="text-sm font-semibold text-slate-800 mb-2">
+          Gestiones registradas
+        </h3>
+        <div className="space-y-2">
+          {gestiones.length === 0 && (
+            <p className="text-sm text-slate-500">No hay gestiones registradas.</p>
+          )}
+          {gestiones.map(g => (
+            <div
+              key={g.id}
+              className="flex items-center justify-between border rounded-md px-3 py-2 text-sm"
+            >
+              <div>
+                <div className="font-medium text-slate-900">
+                  {g.anio}{" "}
+                  {g.isActive && (
+                    <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded bg-green-100 text-green-700 text-xs">
+                      ACTIVA
+                    </span>
+                  )}
                 </div>
-                {!g.isActive && (
-                  <button
-                    onClick={() => handleActivarGestion(g.id)}
-                    className="px-3 py-1 rounded-md border text-xs hover:bg-slate-50"
-                  >
-                    Activar
-                  </button>
-                )}
+                <div className="text-xs text-slate-500">Estado: {g.estado}</div>
               </div>
-            ))}
-          </div>
+
+              <button
+                onClick={() =>
+                  g.isActive
+                    ? handleDesactivarGestion(g.id)
+                    : handleActivarGestion(g.id)
+                }
+                className={`px-3 py-1 rounded-md text-xs border ${
+                  g.isActive
+                    ? "border-red-300 text-red-600 hover:bg-red-50"
+                    : "hover:bg-slate-50 text-slate-700"
+                }`}
+              >
+                {g.isActive ? "Desactivar" : "Activar"}
+              </button>
+            </div>
+          ))}
         </div>
+      </div>
       </section>
 
       <section className="border rounded-lg p-4 bg-white shadow-sm space-y-4">
