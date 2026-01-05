@@ -11,6 +11,19 @@ export class LoginFirebaseRepository {
     const result = await signInWithEmailAndPassword(auth, email, password);
     const user = result.user;
 
+    const idToken = await user.getIdToken();
+
+    const res = await fetch("/api/auth/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ idToken }),
+    });
+
+    if (!res.ok) {
+      await signOut(auth);
+      throw new Error("No se pudo crear la sesión (__session). Revisa firebase-admin.");
+    }
+
     let roles: string[] = [];
 
     const userDocRef = doc(db, "users", user.uid);
@@ -20,9 +33,9 @@ export class LoginFirebaseRepository {
       const data = userDoc.data() as { roles?: string[]; role?: string };
 
       if (Array.isArray(data.roles)) {
-        roles = data.roles;
+        roles = data.roles.map((r) => String(r).toUpperCase());
       } else if (data.role) {
-        roles = [data.role.toUpperCase()];
+        roles = [String(data.role).toUpperCase()];
       }
     }
 
@@ -37,6 +50,7 @@ export class LoginFirebaseRepository {
   }
 
   async logout(): Promise<void> {
+    await fetch("/api/auth/session", { method: "DELETE" });
     await signOut(auth);
   }
 }

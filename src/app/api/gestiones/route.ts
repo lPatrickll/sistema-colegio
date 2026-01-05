@@ -1,43 +1,29 @@
-// app/api/gestiones/route.ts
+// src/app/api/gestiones/route.ts
+export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
-import isAdmin from "../_utils/isAdmin";
+import { requireAdmin } from "../_utils/requireAdmin";
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-
-    const {
-      adminUid,
-      anio,
-    }: {
-      adminUid: string;
-      anio: number;
-    } = body;
-
-    if (!adminUid || !anio) {
-      return NextResponse.json(
-        { error: "Faltan adminUid o anio" },
-        { status: 400 }
-      );
+    const guard = await requireAdmin();
+    if (!guard.ok) {
+      return NextResponse.json({ error: guard.error }, { status: guard.status });
     }
 
-    const can = await isAdmin(adminUid);
-    if (!can) {
-      return NextResponse.json(
-        { error: "No autorizado, se requiere ADMIN" },
-        { status: 403 }
-      );
+    const body = await req.json();
+    const anio = Number(body?.anio);
+
+    if (!anio) {
+      return NextResponse.json({ error: "Falta anio" }, { status: 400 });
     }
 
     const gestionesRef = adminDb.collection("gestiones");
 
     const existenteSnap = await gestionesRef.where("anio", "==", anio).get();
     if (!existenteSnap.empty) {
-      return NextResponse.json(
-        { error: "Ya existe una gestión con ese año" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Ya existe una gestión con ese año" }, { status: 400 });
     }
 
     const gestionRef = gestionesRef.doc();
@@ -46,17 +32,13 @@ export async function POST(req: Request) {
       estado: "PLANIFICADA",
       isActive: false,
       createdAt: new Date(),
-      createdBy: adminUid,
+      createdBy: guard.uid,
     };
 
     await gestionRef.set(payload);
 
     return NextResponse.json(
-      {
-        success: true,
-        id: gestionRef.id,
-        data: payload,
-      },
+      { success: true, id: gestionRef.id, data: payload },
       { status: 201 }
     );
   } catch (err: any) {
@@ -70,9 +52,14 @@ export async function POST(req: Request) {
 
 export async function GET() {
   try {
+    const guard = await requireAdmin();
+    if (!guard.ok) {
+      return NextResponse.json({ error: guard.error }, { status: guard.status });
+    }
+
     const snap = await adminDb.collection("gestiones").get();
 
-    const gestiones = snap.docs.map(docSnap => ({
+    const gestiones = snap.docs.map((docSnap) => ({
       id: docSnap.id,
       ...(docSnap.data() as any),
     }));

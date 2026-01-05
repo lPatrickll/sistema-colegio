@@ -1,33 +1,22 @@
-// app/api/gestiones/activar/route.ts
+// src/app/api/gestiones/activar/route.ts
+export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
-import isAdmin from "../../_utils/isAdmin";
+import { requireAdmin } from "../../_utils/requireAdmin";
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-
-    const {
-      adminUid,
-      gestionId,
-    }: {
-      adminUid: string;
-      gestionId: string;
-    } = body;
-
-    if (!adminUid || !gestionId) {
-      return NextResponse.json(
-        { error: "Faltan adminUid o gestionId" },
-        { status: 400 }
-      );
+    const guard = await requireAdmin();
+    if (!guard.ok) {
+      return NextResponse.json({ error: guard.error }, { status: guard.status });
     }
 
-    const can = await isAdmin(adminUid);
-    if (!can) {
-      return NextResponse.json(
-        { error: "No autorizado, se requiere ADMIN" },
-        { status: 403 }
-      );
+    const body = await req.json();
+    const gestionId = String(body?.gestionId ?? "");
+
+    if (!gestionId) {
+      return NextResponse.json({ error: "Falta gestionId" }, { status: 400 });
     }
 
     const gestionesRef = adminDb.collection("gestiones");
@@ -35,26 +24,17 @@ export async function POST(req: Request) {
     const targetSnap = await targetRef.get();
 
     if (!targetSnap.exists) {
-      return NextResponse.json(
-        { error: "Gestión no encontrada" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Gestión no encontrada" }, { status: 404 });
     }
 
     const batch = adminDb.batch();
 
     const activasSnap = await gestionesRef.where("isActive", "==", true).get();
-    activasSnap.forEach(docSnap => {
-      batch.update(docSnap.ref, {
-        isActive: false,
-        estado: "CERRADA",
-      });
+    activasSnap.forEach((docSnap) => {
+      batch.update(docSnap.ref, { isActive: false, estado: "CERRADA" });
     });
 
-    batch.update(targetRef, {
-      isActive: true,
-      estado: "ACTIVA",
-    });
+    batch.update(targetRef, { isActive: true, estado: "ACTIVA" });
 
     await batch.commit();
 

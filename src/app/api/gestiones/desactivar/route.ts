@@ -1,33 +1,22 @@
-// app/api/gestiones/desactivar/route.ts
+// src/app/api/gestiones/desactivar/route.ts
+export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
-import isAdmin from "../../_utils/isAdmin";
+import { requireAdmin } from "../../_utils/requireAdmin";
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-
-    const {
-      adminUid,
-      gestionId,
-    }: {
-      adminUid: string;
-      gestionId: string;
-    } = body;
-
-    if (!adminUid || !gestionId) {
-      return NextResponse.json(
-        { error: "Faltan adminUid o gestionId" },
-        { status: 400 }
-      );
+    const guard = await requireAdmin();
+    if (!guard.ok) {
+      return NextResponse.json({ error: guard.error }, { status: guard.status });
     }
 
-    const can = await isAdmin(adminUid);
-    if (!can) {
-      return NextResponse.json(
-        { error: "No autorizado, se requiere ADMIN" },
-        { status: 403 }
-      );
+    const body = await req.json();
+    const gestionId = String(body?.gestionId ?? "");
+
+    if (!gestionId) {
+      return NextResponse.json({ error: "Falta gestionId" }, { status: 400 });
     }
 
     const gestionesRef = adminDb.collection("gestiones");
@@ -35,16 +24,10 @@ export async function POST(req: Request) {
     const targetSnap = await targetRef.get();
 
     if (!targetSnap.exists) {
-      return NextResponse.json(
-        { error: "Gestión no encontrada" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Gestión no encontrada" }, { status: 404 });
     }
 
-    await targetRef.update({
-      isActive: false,
-      estado: "CERRADA",
-    });
+    await targetRef.update({ isActive: false, estado: "CERRADA" });
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (err: any) {
