@@ -302,12 +302,12 @@ export default function TeacherAttendancePage() {
 
       <section className="border rounded-lg p-4 bg-white shadow-sm space-y-3">
         <h2 className="text-sm font-semibold text-slate-800">
-          1. Selecciona un grupo de clase
+          1. Selecciona un curso de clase
         </h2>
 
         {classGroups.length === 0 && (
           <p className="text-sm text-slate-500">
-            No tienes grupos asignados en esta gestión.
+            No tienes curso asignados en esta gestión.
           </p>
         )}
 

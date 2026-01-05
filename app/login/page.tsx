@@ -47,45 +47,56 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center">
-      <form
-        onSubmit={handleSubmit}
-        className="flex flex-col gap-4 w-80 border rounded-md p-6"
-      >
-        <h1 className="text-xl font-bold text-center">Iniciar sesión</h1>
+    <main className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="w-full max-w-sm space-y-6">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-slate-900">
+            Iniciar sesión
+          </h1>
+          <p className="text-sm text-slate-600">
+            Accede al sistema académico
+          </p>
+        </div>
 
-        <label className="flex flex-col gap-1 text-sm">
-          Correo
-          <input
-            type="email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            className="border rounded p-2 text-sm"
-            required
-          />
-        </label>
-
-        <label className="flex flex-col gap-1 text-sm">
-          Contraseña
-          <input
-            type="password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            className="border rounded p-2 text-sm"
-            required
-          />
-        </label>
-
-        {error && <p className="text-red-600 text-sm">{error}</p>}
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="mt-2 p-2 rounded bg-blue-600 text-white disabled:opacity-60"
+        <form
+          onSubmit={handleSubmit}
+          className="bg-white border rounded-lg p-6 shadow-sm space-y-4"
         >
-          {loading ? "Ingresando..." : "Ingresar"}
-        </button>
-      </form>
+          <label className="flex flex-col gap-1 text-sm text-slate-700">
+            Correo
+            <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              className="border rounded-md p-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+              required
+            />
+          </label>
+
+          <label className="flex flex-col gap-1 text-sm text-slate-700">
+            Contraseña
+            <input
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              className="border rounded-md p-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+              required
+            />
+          </label>
+
+          {error && (
+            <p className="text-sm text-red-600">{error}</p>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full mt-2 p-2 rounded-md bg-slate-900 text-white text-sm hover:bg-slate-800 transition disabled:opacity-60"
+          >
+            {loading ? "Ingresando..." : "Ingresar"}
+          </button>
+        </form>
+      </div>
     </main>
   );
 }
