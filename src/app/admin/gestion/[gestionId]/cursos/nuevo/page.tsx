@@ -9,10 +9,7 @@ export default async function NuevoCursoPage({
 
   return (
     <div className="p-6 space-y-4">
-      <h1 className="text-2xl font-bold">
-        Crear curso – Gestión {gestionId}
-      </h1>
-
+      <h1 className="text-2xl font-bold text-slate-900">Crear curso — Gestión {gestionId}</h1>
       <CursoForm gestionId={gestionId} />
     </div>
   );

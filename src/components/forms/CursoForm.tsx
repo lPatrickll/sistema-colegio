@@ -1,98 +1,86 @@
 "use client";
 
 import { useState } from "react";
-import { CursoRepository } from "@/modules/curso/curso.repository";
-import type { Nivel } from "@/modules/curso/curso.model";
+import { useRouter } from "next/navigation";
 
-interface CursoFormProps {
-  gestionId: string; // obligatorio para este flujo
-  onCreated?: () => void;
-}
-
-export default function CursoForm({ gestionId, onCreated }: CursoFormProps) {
+export default function CursoForm({ gestionId }: { gestionId: string }) {
+  const router = useRouter();
   const [nombre, setNombre] = useState("");
-  const [nivel, setNivel] = useState<Nivel | "">("");
+  const [nivel, setNivel] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setSuccess(false);
 
-    if (!nombre.trim()) return setError("El nombre del curso es obligatorio");
-    if (!nivel) return setError("El nivel es obligatorio");
+    if (!nombre.trim()) return setError("El nombre del curso es obligatorio.");
+    if (nivel !== "PRIMARIA" && nivel !== "SECUNDARIA") {
+      return setError("Selecciona un nivel válido.");
+    }
 
+    setLoading(true);
     try {
-      setLoading(true);
-
-      await CursoRepository.create({
-        gestionId,
-        nombre: nombre.trim(),
-        nivel,
-        createdAt: new Date().toISOString(),
+      const res = await fetch("/api/courses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          gestionId,
+          nombre: nombre.trim(),
+          nivel,
+        }),
       });
 
-      setSuccess(true);
-      setNombre("");
-      setNivel("");
-      onCreated?.();
-    } catch {
-      setError("Error al guardar el curso en Firestore");
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data?.error ?? "Error al crear curso");
+        return;
+      }
+
+      router.push(`/admin/gestion/${gestionId}/cursos`);
+      router.refresh();
+    } catch (err) {
+      setError("Error de red o servidor.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 max-w-md">
-      {error && (
-        <div className="bg-red-100 text-red-700 p-2 rounded">{error}</div>
-      )}
-
-      {success && (
-        <div className="bg-green-100 text-green-700 p-2 rounded">
-          Curso creado correctamente
-        </div>
-      )}
-
+    <form onSubmit={onSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium mb-1">
-          Nombre del curso
-        </label>
+        <label className="block text-sm font-medium text-slate-700">Nombre del curso</label>
         <input
-          type="text"
-          className="border rounded p-2 w-full"
-          placeholder="Ej: Primero Secundaria"
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
+          className="mt-1 w-full border rounded-md p-2 text-slate-900"
+          placeholder="Ej: Primero Secundaria"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">Nivel</label>
+        <label className="block text-sm font-medium text-slate-700">Nivel</label>
         <select
-          className="border rounded p-2 w-full"
           value={nivel}
-          onChange={(e) => setNivel(e.target.value as Nivel)}
+          onChange={(e) => setNivel(e.target.value)}
+          className="mt-1 w-full border rounded-md p-2 text-slate-900"
         >
           <option value="">Seleccionar nivel</option>
-          <option value="Inicial">Inicial</option>
-          <option value="Primaria">Primaria</option>
-          <option value="Secundaria">Secundaria</option>
+          <option value="PRIMARIA">Primaria</option>
+          <option value="SECUNDARIA">Secundaria</option>
         </select>
       </div>
+
+      {error && <p className="text-sm text-red-600">{error}</p>}
 
       <button
         type="submit"
         disabled={loading}
-        className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
+        className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-60"
       >
         {loading ? "Guardando..." : "Guardar curso"}
       </button>
-
-      <p className="text-xs text-gray-500">Gestión: {gestionId}</p>
     </form>
   );
 }

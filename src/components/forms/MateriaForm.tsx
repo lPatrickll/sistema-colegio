@@ -1,17 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { MateriaRepository } from "@/modules/materia/materia.repository";
-import type { Nivel } from "@/modules/materia/materia.model";
 
-interface MateriaFormProps {
-  gestionId: string;
-  onCreated?: () => void;
-}
+type Nivel = "PRIMARIA" | "SECUNDARIA";
 
-export default function MateriaForm({ gestionId, onCreated }: MateriaFormProps) {
+export default function MateriaForm({ gestionId }: { gestionId: string }) {
   const [nombre, setNombre] = useState("");
-  const [nivel, setNivel] = useState<Nivel | "">("");
+  const [nivel, setNivel] = useState<Nivel>("PRIMARIA");
   const [activa, setActiva] = useState(true);
 
   const [loading, setLoading] = useState(false);
@@ -23,27 +18,40 @@ export default function MateriaForm({ gestionId, onCreated }: MateriaFormProps) 
     setError(null);
     setSuccess(false);
 
-    if (!nombre.trim()) return setError("El nombre de la materia es obligatorio");
-    if (!nivel) return setError("El nivel es obligatorio");
+    const n = nombre.trim().replace(/\s+/g, " ");
+    if (!n) return setError("Nombre es obligatorio");
+    if (n.length < 2) return setError("Nombre demasiado corto");
 
     try {
       setLoading(true);
 
-      await MateriaRepository.create({
-        gestionId,
-        nombre: nombre.trim(),
-        nivel,
-        activa,
-        createdAt: new Date().toISOString(),
+      const res = await fetch("/api/subjects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          gestionId,
+          nombre: n,
+          nivel,
+          activa,
+        }),
       });
+
+      const text = await res.text();
+      let data: any = {};
+      try {
+        data = JSON.parse(text);
+      } catch {}
+
+      if (!res.ok) {
+        throw new Error(data?.error ?? `Error al crear materia (${res.status})`);
+      }
 
       setSuccess(true);
       setNombre("");
-      setNivel("");
+      setNivel("PRIMARIA");
       setActiva(true);
-      onCreated?.();
-    } catch {
-      setError("Error al guardar la materia en Firestore");
+    } catch (err: any) {
+      setError(err?.message ?? "Error al guardar la materia");
     } finally {
       setLoading(false);
     }
@@ -59,9 +67,9 @@ export default function MateriaForm({ gestionId, onCreated }: MateriaFormProps) 
       )}
 
       <div>
-        <label className="block text-sm font-medium mb-1">Nombre</label>
+        <label className="block text-sm font-medium mb-1 text-slate-900">Nombre</label>
         <input
-          className="border rounded p-2 w-full"
+          className="border rounded p-2 w-full text-slate-900"
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
           placeholder="Ej: Matemáticas"
@@ -69,16 +77,14 @@ export default function MateriaForm({ gestionId, onCreated }: MateriaFormProps) 
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">Nivel</label>
+        <label className="block text-sm font-medium mb-1 text-slate-900">Nivel</label>
         <select
-          className="border rounded p-2 w-full"
+          className="border rounded p-2 w-full text-slate-900"
           value={nivel}
           onChange={(e) => setNivel(e.target.value as Nivel)}
         >
-          <option value="">Seleccionar nivel</option>
-          <option value="Inicial">Inicial</option>
-          <option value="Primaria">Primaria</option>
-          <option value="Secundaria">Secundaria</option>
+          <option value="PRIMARIA">Primaria</option>
+          <option value="SECUNDARIA">Secundaria</option>
         </select>
       </div>
 
@@ -89,7 +95,9 @@ export default function MateriaForm({ gestionId, onCreated }: MateriaFormProps) 
           checked={activa}
           onChange={(e) => setActiva(e.target.checked)}
         />
-        <label htmlFor="activa" className="text-sm">Activa</label>
+        <label htmlFor="activa" className="text-sm text-slate-900">
+          Activa
+        </label>
       </div>
 
       <button

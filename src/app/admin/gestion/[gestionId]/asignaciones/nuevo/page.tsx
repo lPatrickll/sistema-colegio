@@ -10,7 +10,7 @@ export default async function NuevaAsignacionPage({
 
   return (
     <div className="p-6 space-y-4">
-      <h1 className="text-2xl font-bold">
+      <h1 className="text-2xl font-bold text-slate-900">
         Asignar docente – Gestión {gestionId}
       </h1>
 

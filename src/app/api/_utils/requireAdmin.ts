@@ -3,7 +3,8 @@ import { adminAuth } from "@/lib/firebase-admin";
 import isAdmin from "./isAdmin";
 
 export async function requireAdmin() {
-  const session = (await cookies()).get("__session")?.value;
+  const cookieStore = await cookies();
+  const session = cookieStore.get("__session")?.value;
 
   if (!session) {
     return { ok: false as const, status: 401, error: "No autenticado" };
@@ -14,7 +15,11 @@ export async function requireAdmin() {
 
     const can = await isAdmin(decoded.uid);
     if (!can) {
-      return { ok: false as const, status: 403, error: "No autorizado, se requiere ADMIN" };
+      return {
+        ok: false as const,
+        status: 403,
+        error: "No autorizado, se requiere ADMIN",
+      };
     }
 
     return { ok: true as const, uid: decoded.uid };

@@ -12,7 +12,7 @@ export default async function AsignacionesPage({
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">
+        <h1 className="text-2xl font-bold text-slate-900">
           Asignaciones – Gestión {gestionId}
         </h1>
 
@@ -25,7 +25,7 @@ export default async function AsignacionesPage({
       </div>
 
       {asignaciones.length === 0 ? (
-        <p className="text-slate-600">No hay asignaciones registradas aún.</p>
+        <p className="text-slate-900">No hay asignaciones registradas aún.</p>
       ) : (
         <div className="space-y-2">
           {asignaciones.map((a) => (

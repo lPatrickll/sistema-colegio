@@ -1,34 +1,32 @@
-import { db } from "@/lib/firebase";
-import {
-  addDoc,
-  collection,
-  getDocs,
-  orderBy,
-  query,
-  where,
-} from "firebase/firestore";
-import type { Curso } from "./curso.model";
-
-type CreateCursoInput = Omit<Curso, "id">;
-
+// src/modules/curso/curso.repository.ts
 export const CursoRepository = {
-  async create(data: CreateCursoInput) {
-    const ref = await addDoc(collection(db, "cursos"), data);
-    return ref.id;
+  async create(input: { gestionId: string; nombre: string; nivel: string }) {
+    const res = await fetch("/api/courses", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok) {
+      throw new Error(data?.error ?? "Error creando curso");
+    }
+
+    return data;
   },
 
-  async listByGestionId(gestionId: string): Promise<Curso[]> {
-    const q = query(
-      collection(db, "cursos"),
-      where("gestionId", "==", gestionId),
-      orderBy("createdAt", "desc")
-    );
+  async listByGestion(gestionId: string) {
+    const res = await fetch(`/api/courses?gestionId=${encodeURIComponent(gestionId)}`, {
+      method: "GET",
+    });
 
-    const snap = await getDocs(q);
+    const data = await res.json().catch(() => null);
 
-    return snap.docs.map((d) => ({
-      id: d.id,
-      ...(d.data() as Omit<Curso, "id">),
-    }));
+    if (!res.ok) {
+      throw new Error(data?.error ?? "Error listando cursos");
+    }
+
+    return data.courses as any[];
   },
 };

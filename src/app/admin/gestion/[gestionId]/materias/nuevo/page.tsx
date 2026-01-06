@@ -9,8 +9,8 @@ export default async function NuevaMateriaPage({
 
   return (
     <div className="p-6 space-y-4">
-      <h1 className="text-2xl font-bold">
-        Crear materia – Gestión {gestionId}
+      <h1 className="text-2xl font-bold text-slate-900">
+        Crear materia — Gestión {gestionId}
       </h1>
 
       <MateriaForm gestionId={gestionId} />

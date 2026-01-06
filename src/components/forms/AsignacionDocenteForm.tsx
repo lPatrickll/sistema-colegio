@@ -159,9 +159,9 @@ export default function AsignacionDocenteForm({ gestionId }: Props) {
         <>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div>
-              <label className="block text-sm font-medium mb-1">Curso</label>
+              <label className="block text-sm font-medium mb-1 text-slate-900">Curso</label>
               <select
-                className="border rounded p-2 w-full"
+                className="border rounded p-2 w-full text-slate-900"
                 value={cursoId}
                 onChange={(e) => setCursoId(e.target.value)}
               >
@@ -175,9 +175,9 @@ export default function AsignacionDocenteForm({ gestionId }: Props) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Profesor</label>
+              <label className="block text-sm font-medium mb-1 text-slate-900">Profesor</label>
               <select
-                className="border rounded p-2 w-full"
+                className="border rounded p-2 w-full text-slate-900"
                 value={profesorId}
                 onChange={(e) => setProfesorId(e.target.value)}
               >
@@ -191,9 +191,9 @@ export default function AsignacionDocenteForm({ gestionId }: Props) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Materia</label>
+              <label className="block text-sm font-medium mb-1 text-slate-900">Materia</label>
               <select
-                className="border rounded p-2 w-full"
+                className="border rounded p-2 w-full text-slate-900"
                 value={materiaId}
                 onChange={(e) => setMateriaId(e.target.value)}
               >
@@ -209,7 +209,7 @@ export default function AsignacionDocenteForm({ gestionId }: Props) {
 
           <div className="border rounded p-3 space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold">Horarios</h3>
+              <h3 className="font-semibold text-slate-900">Horarios</h3>
               <button
                 type="button"
                 onClick={addHorario}
@@ -222,9 +222,9 @@ export default function AsignacionDocenteForm({ gestionId }: Props) {
             {horarios.map((h, idx) => (
               <div key={idx} className="grid grid-cols-1 md:grid-cols-4 gap-2 items-end">
                 <div>
-                  <label className="block text-xs font-medium mb-1">Día</label>
+                  <label className="block text-xs font-medium mb-1 text-slate-900">Día</label>
                   <select
-                    className="border rounded p-2 w-full"
+                    className="border rounded p-2 w-full text-slate-900"
                     value={h.dia}
                     onChange={(e) => updateHorario(idx, { dia: e.target.value as DiaSemana })}
                   >
@@ -237,20 +237,20 @@ export default function AsignacionDocenteForm({ gestionId }: Props) {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium mb-1">Inicio</label>
+                  <label className="block text-xs font-medium mb-1 text-slate-900">Inicio</label>
                   <input
                     type="time"
-                    className="border rounded p-2 w-full"
+                    className="border rounded p-2 w-full text-slate-900"
                     value={h.horaInicio}
                     onChange={(e) => updateHorario(idx, { horaInicio: e.target.value })}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium mb-1">Fin</label>
+                  <label className="block text-xs font-medium mb-1 text-slate-900">Fin</label>
                   <input
                     type="time"
-                    className="border rounded p-2 w-full"
+                    className="border rounded p-2 w-full text-slate-900"
                     value={h.horaFin}
                     onChange={(e) => updateHorario(idx, { horaFin: e.target.value })}
                   />

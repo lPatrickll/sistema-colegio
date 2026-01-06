@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { ProfesorRepository } from "@/modules/profesor/profesor.repository";
 
 interface ProfesorFormProps {
   gestionId: string;
@@ -10,7 +9,8 @@ interface ProfesorFormProps {
 
 export default function ProfesorForm({ gestionId, onCreated }: ProfesorFormProps) {
   const [nombres, setNombres] = useState("");
-  const [apellidos, setApellidos] = useState("");
+  const [apellidoPaterno, setApellidoPaterno] = useState("");
+  const [apellidoMaterno, setApellidoMaterno] = useState("");
   const [ci, setCi] = useState("");
   const [telefono, setTelefono] = useState("");
   const [activo, setActivo] = useState(true);
@@ -24,33 +24,51 @@ export default function ProfesorForm({ gestionId, onCreated }: ProfesorFormProps
     setError(null);
     setSuccess(false);
 
-    if (!nombres.trim()) return setError("Nombres es obligatorio");
-    if (!apellidos.trim()) return setError("Apellidos es obligatorio");
-    if (!ci.trim()) return setError("CI es obligatorio");
+    const n = nombres.trim();
+    const apP = apellidoPaterno.trim();
+    const apM = apellidoMaterno.trim();
+    const ciT = ci.trim();
+    const telT = telefono.trim();
+
+    if (!n) return setError("Nombres es obligatorio");
+    if (!apP) return setError("Primer apellido es obligatorio");
+    if (!apM) return setError("Segundo apellido es obligatorio");
+    if (!ciT) return setError("CI es obligatorio");
 
     try {
       setLoading(true);
 
-      await ProfesorRepository.create({
-        gestionId,
-        nombres: nombres.trim(),
-        apellidos: apellidos.trim(),
-        ci: ci.trim(),
-        telefono: telefono.trim() ? telefono.trim() : undefined,
-        activo,
-        createdAt: new Date().toISOString(),
+      const res = await fetch("/api/teachers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          gestionId,
+          nombres: n,
+          apellidoPaterno: apP,
+          apellidoMaterno: apM,
+          ci: ciT,
+          telefono: telT ? telT : undefined,
+          activo,
+        }),
       });
+
+      const data = await res.json().catch(() => null);
+      
+      if (!res.ok) {
+        throw new Error(data?.error ?? "Error al guardar profesor");
+      }
 
       setSuccess(true);
       setNombres("");
-      setApellidos("");
+      setApellidoPaterno("");
+      setApellidoMaterno("");
       setCi("");
       setTelefono("");
       setActivo(true);
 
       onCreated?.();
-    } catch {
-      setError("Error al guardar el profesor en Firestore");
+    } catch (err: any) {
+      setError(err?.message ?? "Error al guardar profesor");
     } finally {
       setLoading(false);
     }
@@ -66,9 +84,9 @@ export default function ProfesorForm({ gestionId, onCreated }: ProfesorFormProps
       )}
 
       <div>
-        <label className="block text-sm font-medium mb-1">Nombres</label>
+        <label className="block text-sm font-medium mb-1 text-slate-900">Nombres</label>
         <input
-          className="border rounded p-2 w-full"
+          className="border rounded p-2 w-full text-slate-900"
           value={nombres}
           onChange={(e) => setNombres(e.target.value)}
           placeholder="Ej: Juan Carlos"
@@ -76,19 +94,29 @@ export default function ProfesorForm({ gestionId, onCreated }: ProfesorFormProps
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">Apellidos</label>
+        <label className="block text-sm font-medium mb-1 text-slate-900">Primer apellido</label>
         <input
-          className="border rounded p-2 w-full"
-          value={apellidos}
-          onChange={(e) => setApellidos(e.target.value)}
-          placeholder="Ej: Pérez López"
+          className="border rounded p-2 w-full text-slate-900"
+          value={apellidoPaterno}
+          onChange={(e) => setApellidoPaterno(e.target.value)}
+          placeholder="Ej: Pérez"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">CI</label>
+        <label className="block text-sm font-medium mb-1 text-slate-900">Segundo apellido</label>
         <input
-          className="border rounded p-2 w-full"
+          className="border rounded p-2 w-full text-slate-900"
+          value={apellidoMaterno}
+          onChange={(e) => setApellidoMaterno(e.target.value)}
+          placeholder="Ej: López"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1 text-slate-900">CI</label>
+        <input
+          className="border rounded p-2 w-full text-slate-900"
           value={ci}
           onChange={(e) => setCi(e.target.value)}
           placeholder="Ej: 12345678"
@@ -96,9 +124,9 @@ export default function ProfesorForm({ gestionId, onCreated }: ProfesorFormProps
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">Teléfono (opcional)</label>
+        <label className="block text-sm font-medium mb-1 text-slate-900">Teléfono (opcional)</label>
         <input
-          className="border rounded p-2 w-full"
+          className="border rounded p-2 w-full text-slate-900"
           value={telefono}
           onChange={(e) => setTelefono(e.target.value)}
           placeholder="Ej: 70707070"
@@ -112,7 +140,9 @@ export default function ProfesorForm({ gestionId, onCreated }: ProfesorFormProps
           checked={activo}
           onChange={(e) => setActivo(e.target.checked)}
         />
-        <label htmlFor="activo" className="text-sm">Activo</label>
+        <label htmlFor="activo" className="text-sm text-slate-900">
+          Activo
+        </label>
       </div>
 
       <button

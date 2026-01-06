@@ -21,7 +21,7 @@ export default async function GestionesPage() {
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Gestiones</h1>
+        <h1 className="text-2xl font-bold text-slate-900">Gestiones</h1>
 
         <Link
           className="bg-blue-600 text-white px-4 py-2 rounded"
@@ -32,7 +32,7 @@ export default async function GestionesPage() {
       </div>
 
       {gestiones.length === 0 ? (
-        <p className="text-slate-600">No hay gestiones registradas.</p>
+        <p className="text-slate-900">No hay gestiones registradas.</p>
       ) : (
         <div className="space-y-2">
           {gestiones.map((g) => (
@@ -41,9 +41,9 @@ export default async function GestionesPage() {
               className="block border rounded p-3 hover:bg-slate-50"
               href={`/admin/gestion/${g.id}`}
             >
-              <div className="font-semibold">{g.nombre ?? `Gestión ${g.id}`}</div>
+              <div className="font-semibold text-slate-900">{g.nombre ?? `Gestión ${g.anio}`}</div>
               <div className="text-sm text-slate-600">
-                ID: {g.id}
+                ID: {g.anio}
               </div>
             </Link>
           ))}
