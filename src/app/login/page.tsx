@@ -24,20 +24,8 @@ export default function LoginPage() {
     try {
       const user = await loginUseCase.execute({ email, password });
 
-      const roles: string[] = user.roles ?? [];
-      const hasAdmin = roles.some(r => r.toUpperCase() === "ADMIN");
-      const hasTeacher = roles.some(r => r.toUpperCase() === "DOCENTE");
-      const hasStudent = roles.some(r => r.toUpperCase() === "ESTUDIANTE");
-
-      if (hasAdmin) {
-        router.push("/admin");
-      } else if (hasTeacher) {
-        router.push("/teacher");
-      } else if (hasStudent) {
-        router.push("/student");
-      } else {
-        router.push("/");
-      }
+      router.push("/admin");
+      router.refresh();
     } catch (err) {
       console.error(err);
       setError("Correo o contraseña incorrectos.");

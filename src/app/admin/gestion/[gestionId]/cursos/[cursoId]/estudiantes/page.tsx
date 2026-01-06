@@ -4,23 +4,25 @@ import { EstudianteRepository } from "@/modules/estudiante/estudiante.repository
 export default async function EstudiantesCursoPage({
   params,
 }: {
-  params: { gestionId: string; cursoId: string };
+  params: Promise<{ gestionId: string; cursoId: string }>;
 }) {
+  const { gestionId, cursoId } = await params;
+
   const estudiantes = await EstudianteRepository.listByCurso(
-    params.gestionId,
-    params.cursoId
+    gestionId,
+    cursoId
   );
 
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">
-          Estudiantes – Curso {params.cursoId} (Gestión {params.gestionId})
+          Estudiantes – Curso {cursoId} (Gestión {gestionId})
         </h1>
 
         <Link
           className="bg-blue-600 text-white px-4 py-2 rounded"
-          href={`/admin/gestion/${params.gestionId}/cursos/${params.cursoId}/estudiantes/nuevo`}
+          href={`/admin/gestion/${gestionId}/cursos/${cursoId}/estudiantes/nuevo`}
         >
           Nuevo estudiante
         </Link>

@@ -4,20 +4,21 @@ import { CursoRepository } from "@/modules/curso/curso.repository";
 export default async function CursosPage({
   params,
 }: {
-  params: { gestionId: string };
+  params: Promise<{ gestionId: string }>;
 }) {
-  const cursos = await CursoRepository.listByGestionId(params.gestionId);
+  const { gestionId } = await params;
+  const cursos = await CursoRepository.listByGestionId(gestionId);
 
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">
-          Cursos - Gestión {params.gestionId}
+          Cursos - Gestión {gestionId}
         </h1>
 
         <Link
           className="bg-blue-600 text-white px-4 py-2 rounded"
-          href={`/admin/gestion/${params.gestionId}/cursos/nuevo`}
+          href={`/admin/gestion/${gestionId}/cursos/nuevo`}
         >
           Nuevo curso
         </Link>

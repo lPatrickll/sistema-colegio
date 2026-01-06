@@ -4,20 +4,21 @@ import { ProfesorRepository } from "@/modules/profesor/profesor.repository";
 export default async function ProfesoresPage({
   params,
 }: {
-  params: { gestionId: string };
+  params: Promise<{ gestionId: string }>;
 }) {
-  const profesores = await ProfesorRepository.listByGestionId(params.gestionId);
+  const { gestionId } = await params;
+  const profesores = await ProfesorRepository.listByGestionId(gestionId);
 
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">
-          Profesores - Gestión {params.gestionId}
+          Profesores - Gestión {gestionId}
         </h1>
 
         <Link
           className="bg-blue-600 text-white px-4 py-2 rounded"
-          href={`/admin/gestion/${params.gestionId}/profesores/nuevo`}
+          href={`/admin/gestion/${gestionId}/profesores/nuevo`}
         >
           Nuevo profesor
         </Link>

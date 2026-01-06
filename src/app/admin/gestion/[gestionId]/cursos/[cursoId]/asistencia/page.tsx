@@ -1,17 +1,18 @@
 import AsistenciaCursoClient from "./ui/AsistenciaCursoClient";
 
-export default function AsistenciaPage({
+export default async function AsistenciaPage({
   params,
 }: {
-  params: { gestionId: string; cursoId: string };
+  params: Promise<{ gestionId: string; cursoId: string }>;
 }) {
+  const { gestionId, cursoId } = await params;
   return (
     <div className="p-6 space-y-4">
       <h1 className="text-2xl font-bold">
-        Asistencia – Gestión {params.gestionId} / Curso {params.cursoId}
+        Asistencia – Gestión {gestionId} / Curso {cursoId}
       </h1>
 
-      <AsistenciaCursoClient gestionId={params.gestionId} cursoId={params.cursoId} />
+      <AsistenciaCursoClient gestionId={gestionId} cursoId={cursoId} />
     </div>
   );
 }

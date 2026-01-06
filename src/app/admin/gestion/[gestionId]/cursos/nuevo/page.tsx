@@ -1,17 +1,19 @@
 import CursoForm from "@/components/forms/CursoForm";
 
-export default function NuevoCursoPage({
+export default async function NuevoCursoPage({
   params,
 }: {
-  params: { gestionId: string };
+  params: Promise<{ gestionId: string }>;
 }) {
+  const { gestionId } = await params;
+
   return (
     <div className="p-6 space-y-4">
       <h1 className="text-2xl font-bold">
-        Crear curso – Gestión {params.gestionId}
+        Crear curso – Gestión {gestionId}
       </h1>
 
-      <CursoForm gestionId={params.gestionId} />
+      <CursoForm gestionId={gestionId} />
     </div>
   );
 }

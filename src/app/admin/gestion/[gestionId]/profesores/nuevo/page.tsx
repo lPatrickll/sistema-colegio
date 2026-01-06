@@ -1,17 +1,19 @@
 import ProfesorForm from "@/components/forms/ProfesorForm";
 
-export default function NuevoProfesorPage({
+export default async function NuevoProfesorPage({
   params,
 }: {
-  params: { gestionId: string };
+  params: Promise<{ gestionId: string }>;
 }) {
+  const { gestionId } = await params;
+
   return (
     <div className="p-6 space-y-4">
       <h1 className="text-2xl font-bold">
-        Crear profesor – Gestión {params.gestionId}
+        Crear profesor – Gestión {gestionId}
       </h1>
 
-      <ProfesorForm gestionId={params.gestionId} />
+      <ProfesorForm gestionId={gestionId} />
     </div>
   );
 }

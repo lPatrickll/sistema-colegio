@@ -1,17 +1,20 @@
 import AsignacionDocenteForm from "@/components/forms/AsignacionDocenteForm";
 
-export default function NuevaAsignacionPage({
+export default async function NuevaAsignacionPage({
   params,
 }: {
-  params: { gestionId: string };
+  params: Promise<{ gestionId: string }>;
 }) {
+
+  const { gestionId } = await params;
+
   return (
     <div className="p-6 space-y-4">
       <h1 className="text-2xl font-bold">
-        Asignar docente – Gestión {params.gestionId}
+        Asignar docente – Gestión {gestionId}
       </h1>
 
-      <AsignacionDocenteForm gestionId={params.gestionId} />
+      <AsignacionDocenteForm gestionId={gestionId} />
     </div>
   );
 }

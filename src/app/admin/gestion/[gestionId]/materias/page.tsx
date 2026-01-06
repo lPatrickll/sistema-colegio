@@ -4,20 +4,21 @@ import { MateriaRepository } from "@/modules/materia/materia.repository";
 export default async function MateriasPage({
   params,
 }: {
-  params: { gestionId: string };
+  params: Promise<{ gestionId: string }>;
 }) {
-  const materias = await MateriaRepository.listByGestionId(params.gestionId);
+  const { gestionId } = await params;
+  const materias = await MateriaRepository.listByGestionId(gestionId);
 
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">
-          Materias - Gestión {params.gestionId}
+          Materias - Gestión {gestionId}
         </h1>
 
         <Link
           className="bg-blue-600 text-white px-4 py-2 rounded"
-          href={`/admin/gestion/${params.gestionId}/materias/nuevo`}
+          href={`/admin/gestion/${gestionId}/materias/nuevo`}
         >
           Nueva materia
         </Link>

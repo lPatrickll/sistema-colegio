@@ -21,33 +21,17 @@ export class LoginFirebaseRepository {
 
     if (!res.ok) {
       await signOut(auth);
-      throw new Error("No se pudo crear la sesión (__session). Revisa firebase-admin.");
+      throw new Error("No se pudo crear la sesión (__session).");
     }
 
-    let roles: string[] = [];
-
-    const userDocRef = doc(db, "users", user.uid);
-    const userDoc = await getDoc(userDocRef);
-
-    if (userDoc.exists()) {
-      const data = userDoc.data() as { roles?: string[]; role?: string };
-
-      if (Array.isArray(data.roles)) {
-        roles = data.roles.map((r) => String(r).toUpperCase());
-      } else if (data.role) {
-        roles = [String(data.role).toUpperCase()];
-      }
-    }
-
-    const authUser: AuthUser = {
+    return {
       uid: user.uid,
       email: user.email,
       displayName: user.displayName,
-      roles,
+      roles: [],
     };
-
-    return authUser;
   }
+
 
   async logout(): Promise<void> {
     await fetch("/api/auth/session", { method: "DELETE" });

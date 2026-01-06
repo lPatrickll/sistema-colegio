@@ -11,7 +11,6 @@ type Gestion = {
 };
 
 export default async function GestionesPage() {
-  // trae gestiones desde Firestore (colección "gestiones")
   const snap = await adminDb.collection("gestiones").orderBy("createdAt", "desc").get();
 
   const gestiones: Gestion[] = snap.docs.map((d) => ({

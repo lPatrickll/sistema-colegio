@@ -4,20 +4,21 @@ import { AsignacionRepository } from "@/modules/asignacion/asignacion.repository
 export default async function AsignacionesPage({
   params,
 }: {
-  params: { gestionId: string };
+  params: Promise<{ gestionId: string }>;
 }) {
-  const asignaciones = await AsignacionRepository.listByGestionId(params.gestionId);
+  const { gestionId } = await params;
+  const asignaciones = await AsignacionRepository.listByGestionId(gestionId);
 
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">
-          Asignaciones – Gestión {params.gestionId}
+          Asignaciones – Gestión {gestionId}
         </h1>
 
         <Link
           className="bg-blue-600 text-white px-4 py-2 rounded"
-          href={`/admin/gestion/${params.gestionId}/asignaciones/nuevo`}
+          href={`/admin/gestion/${gestionId}/asignaciones/nuevo`}
         >
           Nueva asignación
         </Link>

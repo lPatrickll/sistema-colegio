@@ -1,17 +1,19 @@
 import MateriaForm from "@/components/forms/MateriaForm";
 
-export default function NuevaMateriaPage({
+export default async function NuevaMateriaPage({
   params,
 }: {
-  params: { gestionId: string };
+  params: Promise<{ gestionId: string }>;
 }) {
+  const { gestionId } = await params;
+
   return (
     <div className="p-6 space-y-4">
       <h1 className="text-2xl font-bold">
-        Crear materia – Gestión {params.gestionId}
+        Crear materia – Gestión {gestionId}
       </h1>
 
-      <MateriaForm gestionId={params.gestionId} />
+      <MateriaForm gestionId={gestionId} />
     </div>
   );
 }

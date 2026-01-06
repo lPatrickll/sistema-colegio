@@ -1,12 +1,19 @@
-import GestionForm from "./ui/GestionForm";
+import CursoForm from "@/components/forms/CursoForm";
 
-export const runtime = "nodejs";
+export default async function NuevoCursoPage({
+  params,
+}: {
+  params: Promise<{ gestionId: string }>;
+}) {
+  const { gestionId } = await params;
 
-export default function NuevaGestionPage() {
   return (
-    <div className="p-6 space-y-4">
-      <h1 className="text-2xl font-bold">Nueva gestión</h1>
-      <GestionForm />
+    <div className="space-y-4">
+      <h1 className="text-2xl font-bold text-slate-900">
+        Crear curso – Gestión {gestionId}
+      </h1>
+
+      <CursoForm gestionId={gestionId} />
     </div>
   );
 }

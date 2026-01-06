@@ -27,8 +27,17 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     const decoded = await adminAuth.verifySessionCookie(session, true);
     const roles = await getRoles(decoded.uid);
     if (!roles.includes("ADMIN")) redirect("/no-access");
-    return <>{children}</>;
   } catch {
     redirect("/login");
   }
+
+  return (
+    <main className="min-h-screen bg-slate-50">
+      <div className="max-w-6xl mx-auto p-6">
+        <div className="bg-white border rounded-lg p-6 shadow-sm">
+          {children}
+        </div>
+      </div>
+    </main>
+  );
 }

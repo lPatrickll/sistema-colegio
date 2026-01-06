@@ -35,7 +35,6 @@ export default function GestionForm() {
         throw new Error(data?.error ?? "No se pudo crear la gestión");
       }
 
-      // te manda al dashboard de la gestión recién creada
       router.push(`/admin/gestion/${data.id}`);
       router.refresh();
     } catch (err: any) {
@@ -50,7 +49,7 @@ export default function GestionForm() {
       {error && <div className="bg-red-100 text-red-700 p-2 rounded">{error}</div>}
 
       <div>
-        <label className="block text-sm font-medium mb-1">Nombre</label>
+        <label className="block text-sm font-medium mb-1 text-slate-900">Nombre</label>
         <input
           className="border rounded p-2 w-full"
           value={nombre}
@@ -60,7 +59,7 @@ export default function GestionForm() {
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">Año</label>
+        <label className="block text-sm font-medium mb-1 text-slate-900">Año</label>
         <input
           type="number"
           className="border rounded p-2 w-full"
