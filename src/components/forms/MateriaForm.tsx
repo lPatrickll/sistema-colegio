@@ -2,9 +2,14 @@
 
 import { useState } from "react";
 
-type Nivel = "PRIMARIA" | "SECUNDARIA";
+type Nivel = "INICIAL" | "PRIMARIA" | "SECUNDARIA";
 
-export default function MateriaForm({ gestionId }: { gestionId: string }) {
+interface MateriaFormProps {
+  gestionId: string;
+  onCreated?: () => void;
+}
+
+export default function MateriaForm({ gestionId, onCreated }: MateriaFormProps) {
   const [nombre, setNombre] = useState("");
   const [nivel, setNivel] = useState<Nivel>("PRIMARIA");
   const [activa, setActiva] = useState(true);
@@ -18,9 +23,9 @@ export default function MateriaForm({ gestionId }: { gestionId: string }) {
     setError(null);
     setSuccess(false);
 
-    const n = nombre.trim().replace(/\s+/g, " ");
-    if (!n) return setError("Nombre es obligatorio");
-    if (n.length < 2) return setError("Nombre demasiado corto");
+    const n = nombre.trim();
+    if (!gestionId) return setError("Gestión inválida.");
+    if (!n) return setError("Nombre es obligatorio.");
 
     try {
       setLoading(true);
@@ -37,19 +42,26 @@ export default function MateriaForm({ gestionId }: { gestionId: string }) {
       });
 
       const text = await res.text();
-      let data: any = {};
+      let data: any = null;
       try {
-        data = JSON.parse(text);
-      } catch {}
+        data = text ? JSON.parse(text) : null;
+      } catch {
+      }
 
       if (!res.ok) {
-        throw new Error(data?.error ?? `Error al crear materia (${res.status})`);
+        const msg =
+          data?.error ??
+          (text && text.length < 300 ? text : null) ??
+          "Error al guardar la materia";
+        throw new Error(msg);
       }
 
       setSuccess(true);
       setNombre("");
       setNivel("PRIMARIA");
       setActiva(true);
+
+      onCreated?.();
     } catch (err: any) {
       setError(err?.message ?? "Error al guardar la materia");
     } finally {
@@ -59,7 +71,9 @@ export default function MateriaForm({ gestionId }: { gestionId: string }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 max-w-md">
-      {error && <div className="bg-red-100 text-red-700 p-2 rounded">{error}</div>}
+      {error && (
+        <div className="bg-red-100 text-red-700 p-2 rounded">{error}</div>
+      )}
       {success && (
         <div className="bg-green-100 text-green-700 p-2 rounded">
           Materia creada correctamente
@@ -67,7 +81,9 @@ export default function MateriaForm({ gestionId }: { gestionId: string }) {
       )}
 
       <div>
-        <label className="block text-sm font-medium mb-1 text-slate-900">Nombre</label>
+        <label className="block text-sm font-medium mb-1 text-slate-900">
+          Nombre
+        </label>
         <input
           className="border rounded p-2 w-full text-slate-900"
           value={nombre}
@@ -77,12 +93,15 @@ export default function MateriaForm({ gestionId }: { gestionId: string }) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1 text-slate-900">Nivel</label>
+        <label className="block text-sm font-medium mb-1 text-slate-900">
+          Nivel
+        </label>
         <select
           className="border rounded p-2 w-full text-slate-900"
           value={nivel}
           onChange={(e) => setNivel(e.target.value as Nivel)}
         >
+          <option value="INICIAL">Inicial</option>
           <option value="PRIMARIA">Primaria</option>
           <option value="SECUNDARIA">Secundaria</option>
         </select>

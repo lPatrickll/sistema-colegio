@@ -5,7 +5,6 @@ export default async function NuevaAsignacionPage({
 }: {
   params: Promise<{ gestionId: string }>;
 }) {
-
   const { gestionId } = await params;
 
   return (

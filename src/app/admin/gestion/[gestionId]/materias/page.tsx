@@ -3,7 +3,7 @@ export const runtime = "nodejs";
 import Link from "next/link";
 import { cookies } from "next/headers";
 
-type Materia = {
+type Subject = {
   id: string;
   gestionId: string;
   nombre: string;
@@ -11,10 +11,10 @@ type Materia = {
   activa: boolean;
 };
 
-async function getMaterias(gestionId: string): Promise<{
+async function getSubjects(gestionId: string): Promise<{
   ok: boolean;
   status: number;
-  materias: Materia[];
+  subjects: Subject[];
   rawText?: string;
   error?: string;
 }> {
@@ -22,9 +22,10 @@ async function getMaterias(gestionId: string): Promise<{
   const session = cookieStore.get("__session")?.value;
 
   const base =
-    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "http://localhost:3000";
+    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
+    "http://localhost:3000";
 
-  const url = `${base}/api/subjects?gestionId=${gestionId}`;
+  const url = `${base}/api/subjects?gestionId=${encodeURIComponent(gestionId)}`;
 
   const res = await fetch(url, {
     cache: "no-store",
@@ -37,7 +38,7 @@ async function getMaterias(gestionId: string): Promise<{
     return {
       ok: false,
       status: res.status,
-      materias: [],
+      subjects: [],
       rawText: text,
       error: `API respondió ${res.status}`,
     };
@@ -48,13 +49,13 @@ async function getMaterias(gestionId: string): Promise<{
     return {
       ok: true,
       status: res.status,
-      materias: data.subjects ?? [],
+      subjects: data.subjects ?? data.materias ?? [],
     };
   } catch {
     return {
       ok: false,
       status: res.status,
-      materias: [],
+      subjects: [],
       rawText: text,
       error: "La API no devolvió JSON válido",
     };
@@ -68,7 +69,17 @@ export default async function MateriasPage({
 }) {
   const { gestionId } = await params;
 
-  const result = await getMaterias(gestionId);
+  if (!gestionId) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4">
+          Error: falta gestionId en la ruta.
+        </div>
+      </div>
+    );
+  }
+
+  const result = await getSubjects(gestionId);
 
   if (!result.ok) {
     return (
@@ -83,7 +94,9 @@ export default async function MateriasPage({
           <p className="text-sm mt-1">Status: {result.status}</p>
 
           <details className="mt-3">
-            <summary className="cursor-pointer text-sm">Ver respuesta cruda</summary>
+            <summary className="cursor-pointer text-sm">
+              Ver respuesta cruda
+            </summary>
             <pre className="text-xs mt-2 whitespace-pre-wrap break-words">
               {result.rawText ?? "(vacío)"}
             </pre>
@@ -100,7 +113,7 @@ export default async function MateriasPage({
     );
   }
 
-  const materias = result.materias;
+  const subjects = result.subjects;
 
   return (
     <div className="p-6 space-y-4">
@@ -117,9 +130,9 @@ export default async function MateriasPage({
         </Link>
       </div>
 
-      {materias.length === 0 ? (
+      {subjects.length === 0 ? (
         <div className="bg-white border rounded-lg p-6 text-slate-600">
-          No hay materias registradas todavía.
+          No hay materias registradas aún.
         </div>
       ) : (
         <div className="bg-white border rounded-lg overflow-hidden">
@@ -132,7 +145,7 @@ export default async function MateriasPage({
               </tr>
             </thead>
             <tbody>
-              {materias.map((m) => (
+              {subjects.map((m) => (
                 <tr key={m.id} className="border-t">
                   <td className="p-3">{m.nombre}</td>
                   <td className="p-3">{m.nivel}</td>

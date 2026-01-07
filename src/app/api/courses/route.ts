@@ -1,71 +1,37 @@
-// src/app/api/courses/route.ts
-export const runtime = "nodejs";
-
 import { NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebase-admin";
-import { requireAdmin } from "../_utils/requireAdmin";
+import { cookies } from "next/headers";
+import { adminAuth, adminDb } from "@/lib/firebase-admin";
 
-function toUpper(s: string) {
-  return String(s ?? "").trim().toUpperCase();
-}
+async function requireAdmin(): Promise<{ uid: string } | null> {
+  const session = (await cookies()).get("__session")?.value;
+  if (!session) return null;
 
-function toLower(s: string) {
-  return String(s ?? "").trim().toLowerCase();
-}
+  const decoded = await adminAuth.verifySessionCookie(session, true);
 
-export async function POST(req: Request) {
-  const auth = await requireAdmin();
-  if (!auth.ok) {
-    return NextResponse.json({ error: auth.error }, { status: auth.status });
-  }
+  const snap = await adminDb.collection("users").doc(decoded.uid).get();
+  if (!snap.exists) return null;
 
-  try {
-    const body = await req.json();
-    const { gestionId, nombre, nivel } = body as {
-      gestionId?: string;
-      nombre?: string;
-      nivel?: string;
-    };
+  const data = snap.data() as any;
 
-    if (!gestionId || !String(gestionId).trim()) {
-      return NextResponse.json({ error: "Falta gestionId" }, { status: 400 });
-    }
-    if (!nombre || !String(nombre).trim()) {
-      return NextResponse.json({ error: "Falta nombre" }, { status: 400 });
-    }
-    if (!nivel || !String(nivel).trim()) {
-      return NextResponse.json({ error: "Falta nivel" }, { status: 400 });
-    }
+  const rolesRaw: string[] = Array.isArray(data?.roles)
+    ? data.roles
+    : data?.role
+      ? [data.role]
+      : [];
 
-    const payload = {
-      gestionId: String(gestionId).trim(),
-      nombre: String(nombre).trim(),
-      nombreLower: toLower(nombre),
-      nivel: toUpper(nivel),
-      createdAt: new Date(),
-      createdBy: auth.uid,
-    };
+  const roles = rolesRaw.map((r) => String(r).toUpperCase());
+  if (!roles.includes("ADMIN")) return null;
 
-    const ref = adminDb.collection("courses").doc();
-    await ref.set(payload);
-
-    return NextResponse.json({ success: true, id: ref.id, data: payload }, { status: 201 });
-  } catch (err: any) {
-    console.error("[POST /api/courses] Error:", err);
-    return NextResponse.json(
-      { error: err?.message ?? "Error al crear curso" },
-      { status: 500 }
-    );
-  }
+  return { uid: decoded.uid };
 }
 
 export async function GET(req: Request) {
-  const auth = await requireAdmin();
-  if (!auth.ok) {
-    return NextResponse.json({ error: auth.error }, { status: auth.status });
-  }
-
   try {
+    const admin = await requireAdmin();
+    if (!admin) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
+
     const { searchParams } = new URL(req.url);
     const gestionId = searchParams.get("gestionId")?.trim();
 
@@ -78,12 +44,62 @@ export async function GET(req: Request) {
       .where("gestionId", "==", gestionId)
       .get();
 
-    const courses = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) }));
+    const courses = snap.docs
+      .map((d) => ({ id: d.id, ...(d.data() as any) }))
+      .sort((a: any, b: any) => {
+        const ta = a?.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+        const tb = b?.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+        return tb - ta;
+      });
+
     return NextResponse.json({ courses }, { status: 200 });
   } catch (err: any) {
-    console.error("[GET /api/courses] Error:", err);
+    console.error("GET /api/courses error:", err);
     return NextResponse.json(
       { error: err?.message ?? "Error al listar cursos" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(req: Request) {
+  try {
+    const admin = await requireAdmin();
+    if (!admin) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const gestionId = String(body?.gestionId ?? "").trim();
+    const nombre = String(body?.nombre ?? "").trim();
+    const nivel = String(body?.nivel ?? "").trim();
+    const activo = Boolean(body?.activo ?? true);
+
+    if (!gestionId) {
+      return NextResponse.json({ error: "Falta gestionId" }, { status: 400 });
+    }
+    if (!nombre) {
+      return NextResponse.json({ error: "Nombre es obligatorio" }, { status: 400 });
+    }
+    if (!nivel) {
+      return NextResponse.json({ error: "Nivel es obligatorio" }, { status: 400 });
+    }
+
+    const docRef = await adminDb.collection("courses").add({
+      gestionId,
+      nombre,
+      nombreLower: nombre.toLowerCase(),
+      nivel,
+      activo,
+      createdAt: new Date(),
+      createdBy: admin.uid,
+    });
+
+    return NextResponse.json({ id: docRef.id }, { status: 201 });
+  } catch (err: any) {
+    console.error("POST /api/courses error:", err);
+    return NextResponse.json(
+      { error: err?.message ?? "Error al crear curso" },
       { status: 500 }
     );
   }
