@@ -76,7 +76,7 @@ export default async function ProfesoresPage({
   if (!gestionId) {
     return (
       <div className="p-6">
-        <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4">
+        <div className="bg-red-950/40 border border-red-900 text-red-200 rounded-lg p-4">
           Falta gestionId en la ruta.
         </div>
       </div>
@@ -87,19 +87,21 @@ export default async function ProfesoresPage({
 
   if (!result.ok) {
     return (
-      <div className="p-6 space-y-4">
-        <h1 className="text-2xl font-bold text-slate-900">
+      <div className="p-6 space-y-4 text-slate-100">
+        <h1 className="text-2xl font-bold text-slate-100">
           Profesores — Gestión {gestionId}
         </h1>
 
-        <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 text-slate-900">
-          <p className="font-semibold text-slate-900">Error cargando profesores</p>
-          <p className="text-sm mt-1 text-slate-900">{result.error}</p>
-          <p className="text-sm mt-1 text-slate-900">Status: {result.status}</p>
+        <div className="bg-red-950/40 border border-red-900 text-red-200 rounded-lg p-4">
+          <p className="font-semibold">Error cargando profesores</p>
+          <p className="text-sm mt-1">{result.error}</p>
+          <p className="text-sm mt-1">Status: {result.status}</p>
 
           <details className="mt-3">
-            <summary className="cursor-pointer text-sm text-slate-900">Ver respuesta cruda</summary>
-            <pre className="text-xs mt-2 whitespace-pre-wrap break-words text-slate-900">
+            <summary className="cursor-pointer text-sm text-slate-200">
+              Ver respuesta cruda
+            </summary>
+            <pre className="text-xs mt-2 whitespace-pre-wrap break-words text-slate-200">
               {result.rawText ?? "(vacío)"}
             </pre>
           </details>
@@ -107,7 +109,7 @@ export default async function ProfesoresPage({
 
         <Link
           href={`/admin/gestion/${gestionId}`}
-          className="inline-block bg-slate-900 text-white px-4 py-2 rounded"
+          className="inline-flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-slate-100 px-4 py-2 rounded border border-slate-700"
         >
           Volver a gestión
         </Link>
@@ -118,28 +120,28 @@ export default async function ProfesoresPage({
   const teachers = result.teachers;
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="p-6 space-y-4 text-slate-100">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-slate-900">
+        <h1 className="text-2xl font-bold text-slate-100">
           Profesores — Gestión {gestionId}
         </h1>
 
         <Link
           href={`/admin/gestion/${gestionId}/profesores/nuevo`}
-          className="bg-blue-600 text-white px-4 py-2 rounded"
+          className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded"
         >
           Crear profesor
         </Link>
       </div>
 
       {teachers.length === 0 ? (
-        <div className="bg-white border rounded-lg p-6 text-slate-900">
+        <div className="bg-slate-900 border border-slate-800 rounded-lg p-6 text-slate-400">
           No hay profesores registrados todavía.
         </div>
       ) : (
-        <div className="bg-white border rounded-lg overflow-hidden">
+        <div className="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-slate-900">
+            <thead className="bg-slate-950/50">
               <tr>
                 <th className="text-left p-3 text-slate-200">Nombre completo</th>
                 <th className="text-left p-3 text-slate-200">CI</th>
@@ -148,19 +150,25 @@ export default async function ProfesoresPage({
                 <th className="text-left p-3 text-slate-200">Acciones</th>
               </tr>
             </thead>
+
             <tbody>
               {teachers.map((t) => (
-                <tr key={t.id} className="border-t">
-                  <td className="p-3 text-slate-900">{t.nombreCompleto}</td>
-                  <td className="p-3 text-slate-900">{t.ci}</td>
-                  <td className="p-3 text-slate-900">{t.telefono ?? "-"}</td>
-                  <td className="p-3 text-slate-900">{t.activo ? "Activo" : "Inactivo"}</td>
-                  <Link
-                    className="bg-slate-800 hover:bg-slate-700 text-slate-100 px-3 py-2 rounded border border-slate-700 text-xs"
-                    href={`/admin/gestion/${gestionId}/profesores/${t.id}/editar`}
-                  >
-                    Editar asignaciones
-                  </Link>
+                <tr key={t.id} className="border-t border-slate-800">
+                  <td className="p-3 text-slate-100">{t.nombreCompleto}</td>
+                  <td className="p-3 text-slate-300">{t.ci}</td>
+                  <td className="p-3 text-slate-300">{t.telefono ?? "-"}</td>
+                  <td className="p-3 text-slate-300">
+                    {t.activo ? "Activo" : "Inactivo"}
+                  </td>
+
+                  <td className="p-3">
+                    <Link
+                      className="inline-flex bg-slate-800 hover:bg-slate-700 text-slate-100 px-3 py-2 rounded border border-slate-700 text-xs"
+                      href={`/admin/gestion/${gestionId}/profesores/${t.id}/editar`}
+                    >
+                      Editar asignaciones
+                    </Link>
+                  </td>
                 </tr>
               ))}
             </tbody>

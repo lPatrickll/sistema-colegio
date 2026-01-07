@@ -11,7 +11,10 @@ type Gestion = {
 };
 
 export default async function GestionesPage() {
-  const snap = await adminDb.collection("gestiones").orderBy("createdAt", "desc").get();
+  const snap = await adminDb
+    .collection("gestiones")
+    .orderBy("createdAt", "desc")
+    .get();
 
   const gestiones: Gestion[] = snap.docs.map((d) => ({
     id: d.id,
@@ -19,12 +22,12 @@ export default async function GestionesPage() {
   }));
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="p-6 space-y-4 text-slate-100">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-slate-900">Gestiones</h1>
+        <h1 className="text-2xl font-bold text-slate-100">Gestiones</h1>
 
         <Link
-          className="bg-blue-600 text-white px-4 py-2 rounded"
+          className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded"
           href="/admin/gestion/nuevo"
         >
           Nueva gestión
@@ -32,18 +35,23 @@ export default async function GestionesPage() {
       </div>
 
       {gestiones.length === 0 ? (
-        <p className="text-slate-900">No hay gestiones registradas.</p>
+        <div className="bg-slate-900 border border-slate-800 rounded-lg p-4 text-slate-400">
+          No hay gestiones registradas.
+        </div>
       ) : (
         <div className="space-y-2">
           {gestiones.map((g) => (
             <Link
               key={g.id}
-              className="block border rounded p-3 hover:bg-slate-50"
+              className="block bg-slate-900 border border-slate-800 rounded-lg p-4 hover:bg-slate-800 transition"
               href={`/admin/gestion/${g.id}`}
             >
-              <div className="font-semibold text-slate-900">{g.nombre ?? `Gestión ${g.anio}`}</div>
-              <div className="text-sm text-slate-600">
-                ID: {g.anio}
+              <div className="font-semibold text-slate-100">
+                {g.nombre ?? `Gestión ${g.anio ?? g.id}`}
+              </div>
+
+              <div className="text-sm text-slate-400 mt-1">
+                {g.anio ? `Año: ${g.anio}` : `ID: ${g.id}`}
               </div>
             </Link>
           ))}

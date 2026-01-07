@@ -6,8 +6,9 @@ import { cookies } from "next/headers";
 type Subject = {
   id: string;
   gestionId: string;
+  courseId: string;
+  courseNombre?: string | null;
   nombre: string;
-  nivel: string;
   activa: boolean;
 };
 
@@ -22,8 +23,7 @@ async function getSubjects(gestionId: string): Promise<{
   const session = cookieStore.get("__session")?.value;
 
   const base =
-    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
-    "http://localhost:3000";
+    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "http://localhost:3000";
 
   const url = `${base}/api/subjects?gestionId=${encodeURIComponent(gestionId)}`;
 
@@ -72,7 +72,7 @@ export default async function MateriasPage({
   if (!gestionId) {
     return (
       <div className="p-6">
-        <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4">
+        <div className="bg-red-950/40 border border-red-900 text-red-200 rounded-lg p-4">
           Error: falta gestionId en la ruta.
         </div>
       </div>
@@ -84,20 +84,20 @@ export default async function MateriasPage({
   if (!result.ok) {
     return (
       <div className="p-6 space-y-4">
-        <h1 className="text-2xl font-bold text-slate-900">
+        <h1 className="text-2xl font-bold text-slate-100">
           Materias — Gestión {gestionId}
         </h1>
 
-        <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4">
+        <div className="bg-red-950/40 border border-red-900 text-red-200 rounded-lg p-4">
           <p className="font-semibold">Error cargando materias</p>
           <p className="text-sm mt-1">{result.error}</p>
           <p className="text-sm mt-1">Status: {result.status}</p>
 
           <details className="mt-3">
-            <summary className="cursor-pointer text-sm">
+            <summary className="cursor-pointer text-sm text-slate-200">
               Ver respuesta cruda
             </summary>
-            <pre className="text-xs mt-2 whitespace-pre-wrap break-words">
+            <pre className="text-xs mt-2 whitespace-pre-wrap break-words text-slate-200">
               {result.rawText ?? "(vacío)"}
             </pre>
           </details>
@@ -105,7 +105,7 @@ export default async function MateriasPage({
 
         <Link
           href={`/admin/gestion/${gestionId}`}
-          className="inline-block bg-slate-900 text-white px-4 py-2 rounded"
+          className="inline-flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-slate-100 px-4 py-2 rounded border border-slate-700"
         >
           Volver a gestión
         </Link>
@@ -116,14 +116,14 @@ export default async function MateriasPage({
   const subjects = result.subjects;
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="p-6 space-y-4 text-slate-100">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-slate-900">
+        <h1 className="text-2xl font-bold text-slate-100">
           Materias — Gestión {gestionId}
         </h1>
 
         <Link
-          className="bg-blue-600 text-white px-4 py-2 rounded"
+          className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded"
           href={`/admin/gestion/${gestionId}/materias/nuevo`}
         >
           Nueva materia
@@ -131,25 +131,29 @@ export default async function MateriasPage({
       </div>
 
       {subjects.length === 0 ? (
-        <div className="bg-white border rounded-lg p-6 text-slate-600">
+        <div className="bg-slate-900 border border-slate-800 rounded-lg p-6 text-slate-400">
           No hay materias registradas aún.
         </div>
       ) : (
-        <div className="bg-white border rounded-lg overflow-hidden">
+        <div className="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50">
+            <thead className="bg-slate-950/50">
               <tr>
-                <th className="text-left p-3">Nombre</th>
-                <th className="text-left p-3">Nivel</th>
-                <th className="text-left p-3">Estado</th>
+                <th className="text-left p-3 text-slate-200">Curso</th>
+                <th className="text-left p-3 text-slate-200">Materia</th>
+                <th className="text-left p-3 text-slate-200">Estado</th>
               </tr>
             </thead>
             <tbody>
               {subjects.map((m) => (
-                <tr key={m.id} className="border-t">
-                  <td className="p-3">{m.nombre}</td>
-                  <td className="p-3">{m.nivel}</td>
-                  <td className="p-3">{m.activa ? "Activa" : "Inactiva"}</td>
+                <tr key={m.id} className="border-t border-slate-800">
+                  <td className="p-3 text-slate-300">
+                    {m.courseNombre ?? m.courseId}
+                  </td>
+                  <td className="p-3 text-slate-100">{m.nombre}</td>
+                  <td className="p-3 text-slate-300">
+                    {m.activa ? "Activa" : "Inactiva"}
+                  </td>
                 </tr>
               ))}
             </tbody>
