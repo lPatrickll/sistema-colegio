@@ -35,51 +35,45 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-50 flex items-center justify-center">
+    <main className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center">
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-slate-900">
-            Iniciar sesión
-          </h1>
-          <p className="text-sm text-slate-600">
-            Accede al sistema académico
-          </p>
+          <h1 className="text-2xl font-bold text-slate-100">Iniciar sesión</h1>
+          <p className="text-sm text-slate-400">Accede al sistema académico</p>
         </div>
 
         <form
           onSubmit={handleSubmit}
-          className="bg-white border rounded-lg p-6 shadow-sm space-y-4"
+          className="bg-slate-900 border border-slate-800 rounded-lg p-6 shadow-sm space-y-4"
         >
-          <label className="flex flex-col gap-1 text-sm text-slate-700">
+          <label className="flex flex-col gap-1 text-sm text-slate-300">
             Correo
             <input
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              className="border rounded-md p-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+              className="bg-slate-950 border border-slate-700 rounded-md p-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-600"
               required
             />
           </label>
 
-          <label className="flex flex-col gap-1 text-sm text-slate-700">
+          <label className="flex flex-col gap-1 text-sm text-slate-300">
             Contraseña
             <input
               type="password"
               value={password}
               onChange={e => setPassword(e.target.value)}
-              className="border rounded-md p-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+              className="bg-slate-950 border border-slate-700 rounded-md p-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-600"
               required
             />
           </label>
 
-          {error && (
-            <p className="text-sm text-red-600">{error}</p>
-          )}
+          {error && <p className="text-sm text-red-400">{error}</p>}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-2 p-2 rounded-md bg-slate-900 text-white text-sm hover:bg-slate-800 transition disabled:opacity-60"
+            className="w-full mt-2 p-2 rounded-md bg-blue-600 hover:bg-blue-500 text-white text-sm transition disabled:opacity-60"
           >
             {loading ? "Ingresando..." : "Ingresar"}
           </button>

@@ -32,9 +32,9 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   }
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen bg-slate-950 text-slate-100">
       <div className="max-w-6xl mx-auto p-6">
-        <div className="bg-white border rounded-lg p-6 shadow-sm">
+        <div className="bg-slate-900 border border-slate-800 rounded-lg p-6 shadow-sm">
           {children}
         </div>
       </div>

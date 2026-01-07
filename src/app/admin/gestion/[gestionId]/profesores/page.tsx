@@ -139,12 +139,13 @@ export default async function ProfesoresPage({
       ) : (
         <div className="bg-white border rounded-lg overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50">
+            <thead className="bg-slate-900">
               <tr>
-                <th className="text-left p-3 text-slate-900">Nombre completo</th>
-                <th className="text-left p-3 text-slate-900">CI</th>
-                <th className="text-left p-3 text-slate-900">Teléfono</th>
-                <th className="text-left p-3 text-slate-900">Estado</th>
+                <th className="text-left p-3 text-slate-200">Nombre completo</th>
+                <th className="text-left p-3 text-slate-200">CI</th>
+                <th className="text-left p-3 text-slate-200">Teléfono</th>
+                <th className="text-left p-3 text-slate-200">Estado</th>
+                <th className="text-left p-3 text-slate-200">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -154,6 +155,12 @@ export default async function ProfesoresPage({
                   <td className="p-3 text-slate-900">{t.ci}</td>
                   <td className="p-3 text-slate-900">{t.telefono ?? "-"}</td>
                   <td className="p-3 text-slate-900">{t.activo ? "Activo" : "Inactivo"}</td>
+                  <Link
+                    className="bg-slate-800 hover:bg-slate-700 text-slate-100 px-3 py-2 rounded border border-slate-700 text-xs"
+                    href={`/admin/gestion/${gestionId}/profesores/${t.id}/editar`}
+                  >
+                    Editar asignaciones
+                  </Link>
                 </tr>
               ))}
             </tbody>

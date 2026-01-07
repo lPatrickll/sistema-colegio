@@ -1,4 +1,5 @@
-import Link from "next/link";
+import ActionCard from "@/components/ui/ActionCard";
+import ButtonLink from "@/components/ui/ButtonLink";
 
 export default async function GestionDashboardPage({
   params,
@@ -8,41 +9,62 @@ export default async function GestionDashboardPage({
   const { gestionId } = await params;
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-slate-900">Gestión {gestionId}</h1>
+    <div className="space-y-6">
+      <header className="space-y-1">
+        <h1 className="text-2xl font-bold text-slate-100">Gestión {gestionId}</h1>
+        <p className="text-sm text-slate-400">
+          Accesos rápidos para administrar cursos, materias, profesores y asignaciones.
+        </p>
+      </header>
 
-      <div className="flex flex-wrap gap-3">
-        <Link className="bg-slate-900 text-white px-4 py-2 rounded" href={`/admin/gestion/${gestionId}/cursos`}>
-          Ver cursos
-        </Link>
+      <div className="grid gap-4 md:grid-cols-2">
+        <ActionCard
+          title="Cursos"
+          description="Crea cursos y administra su estructura."
+        >
+          <ButtonLink href={`/admin/gestion/${gestionId}/cursos`} variant="secondary">
+            Ver cursos
+          </ButtonLink>
+          <ButtonLink href={`/admin/gestion/${gestionId}/cursos/nuevo`} variant="primary">
+            Crear curso
+          </ButtonLink>
+        </ActionCard>
 
-        <Link className="bg-blue-600 text-white px-4 py-2 rounded" href={`/admin/gestion/${gestionId}/cursos/nuevo`}>
-          Crear curso
-        </Link>
+        <ActionCard
+          title="Materias"
+          description="Crea materias dentro de cursos."
+        >
+          <ButtonLink href={`/admin/gestion/${gestionId}/materias`} variant="secondary">
+            Ver materias
+          </ButtonLink>
+          <ButtonLink href={`/admin/gestion/${gestionId}/materias/nuevo`} variant="primary">
+            Crear materia
+          </ButtonLink>
+        </ActionCard>
 
-        <Link className="bg-slate-900 text-white px-4 py-2 rounded" href={`/admin/gestion/${gestionId}/profesores`}>
-          Ver profesores
-        </Link>
+        <ActionCard
+          title="Profesores"
+          description="Registra profesores y asigna cursos/materias."
+        >
+          <ButtonLink href={`/admin/gestion/${gestionId}/profesores`} variant="secondary">
+            Ver profesores
+          </ButtonLink>
+          <ButtonLink href={`/admin/gestion/${gestionId}/profesores/nuevo`} variant="primary">
+            Crear profesor
+          </ButtonLink>
+        </ActionCard>
 
-        <Link className="bg-blue-600 text-white px-4 py-2 rounded" href={`/admin/gestion/${gestionId}/profesores/nuevo`}>
-          Crear profesor
-        </Link>
-
-        <Link className="bg-slate-900 text-white px-4 py-2 rounded" href={`/admin/gestion/${gestionId}/materias`}>
-          Ver materias
-        </Link>
-
-        <Link className="bg-blue-600 text-white px-4 py-2 rounded" href={`/admin/gestion/${gestionId}/materias/nuevo`}>
-          Crear materia
-        </Link>
-
-        <Link className="bg-slate-900 text-white px-4 py-2 rounded" href={`/admin/gestion/${gestionId}/asignaciones`}>
-          Ver asignaciones
-        </Link>
-
-        <Link className="bg-blue-600 text-white px-4 py-2 rounded" href={`/admin/gestion/${gestionId}/asignaciones/nuevo`}>
-          Nueva asignación
-        </Link>
+        <ActionCard
+          title="Asignaciones"
+          description="Define qué profesor dicta qué materia en qué curso."
+        >
+          <ButtonLink href={`/admin/gestion/${gestionId}/asignaciones`} variant="secondary">
+            Ver asignaciones
+          </ButtonLink>
+          <ButtonLink href={`/admin/gestion/${gestionId}/asignaciones/nuevo`} variant="primary">
+            Nueva asignación
+          </ButtonLink>
+        </ActionCard>
       </div>
     </div>
   );

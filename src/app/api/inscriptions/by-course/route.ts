@@ -1,12 +1,15 @@
-// app/api/inscriptions/by-course/route.ts
 import { NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
+import { requireAdmin } from "@/app/api/_utils/requireAdmin";
 
 export async function GET(req: Request) {
+  const auth = await requireAdmin();
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
   try {
     const { searchParams } = new URL(req.url);
-    const courseId = searchParams.get("courseId");
-    const gestionId = searchParams.get("gestionId");
+    const courseId = String(searchParams.get("courseId") ?? "").trim();
+    const gestionId = String(searchParams.get("gestionId") ?? "").trim();
 
     if (!courseId || !gestionId) {
       return NextResponse.json(
@@ -15,19 +18,12 @@ export async function GET(req: Request) {
       );
     }
 
-    const inscriptionsRef = adminDb.collection("inscriptions");
-    const insSnap = await inscriptionsRef
+    const insSnap = await adminDb
+      .collection("inscriptions")
       .where("courseId", "==", courseId)
       .where("gestionId", "==", gestionId)
       .where("estado", "==", "ACTIVO")
       .get();
-
-    if (insSnap.empty) {
-      return NextResponse.json(
-        { students: [], count: 0 },
-        { status: 200 }
-      );
-    }
 
     const results: any[] = [];
 
@@ -37,28 +33,14 @@ export async function GET(req: Request) {
 
       const studentSnap = await adminDb.collection("students").doc(studentId).get();
 
-      let studentData: any = null;
-      if (studentSnap.exists) {
-        studentData = {
-          id: studentSnap.id,
-          ...(studentSnap.data() as any),
-        };
-      }
-
       results.push({
         inscriptionId: docSnap.id,
         studentId,
-        student: studentData,
+        student: studentSnap.exists ? { id: studentSnap.id, ...(studentSnap.data() as any) } : null,
       });
     }
 
-    return NextResponse.json(
-      {
-        students: results,
-        count: results.length,
-      },
-      { status: 200 }
-    );
+    return NextResponse.json({ students: results, count: results.length }, { status: 200 });
   } catch (err: any) {
     console.error("[GET /api/inscriptions/by-course] Error:", err);
     return NextResponse.json(

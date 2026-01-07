@@ -1,18 +1,18 @@
-import ProfesorForm from "@/components/forms/ProfesorForm";
 import Link from "next/link";
+import TeacherAssignmentsForm from "@/components/forms/TeacherAssignmentsForm";
 
-export default async function NuevoProfesorPage({
+export default async function EditarProfesorAsignacionesPage({
   params,
 }: {
-  params: Promise<{ gestionId: string }>;
+  params: Promise<{ gestionId: string; teacherId: string }>;
 }) {
-  const { gestionId } = await params;
+  const { gestionId, teacherId } = await params;
 
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-slate-100">
-          Crear profesor — Gestión {gestionId}
+          Editar asignaciones — Profesor {teacherId}
         </h1>
 
         <Link
@@ -23,7 +23,7 @@ export default async function NuevoProfesorPage({
         </Link>
       </div>
 
-      <ProfesorForm gestionId={gestionId} />
+      <TeacherAssignmentsForm gestionId={gestionId} teacherId={teacherId} />
     </div>
   );
 }
