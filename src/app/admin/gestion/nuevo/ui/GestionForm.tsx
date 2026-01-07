@@ -29,7 +29,7 @@ export default function GestionForm() {
         }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
 
       if (!res.ok) {
         throw new Error(data?.error ?? "No se pudo crear la gestión");
@@ -38,7 +38,7 @@ export default function GestionForm() {
       router.push(`/admin/gestion/${data.id}`);
       router.refresh();
     } catch (err: any) {
-      setError(err.message ?? "Error creando gestión");
+      setError(err?.message ?? "Error creando gestión");
     } finally {
       setLoading(false);
     }
@@ -46,12 +46,18 @@ export default function GestionForm() {
 
   return (
     <form onSubmit={submit} className="space-y-4 max-w-md">
-      {error && <div className="bg-red-100 text-red-700 p-2 rounded">{error}</div>}
+      {error && (
+        <div className="bg-red-950/40 border border-red-900 text-red-200 p-2 rounded">
+          {error}
+        </div>
+      )}
 
       <div>
-        <label className="block text-sm font-medium mb-1 text-slate-900">Nombre</label>
+        <label className="block text-sm font-medium mb-1 text-slate-200">
+          Nombre
+        </label>
         <input
-          className="border rounded p-2 w-full"
+          className="bg-slate-950 border border-slate-700 rounded p-2 w-full text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-600"
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
           placeholder="Gestión 2025"
@@ -59,10 +65,12 @@ export default function GestionForm() {
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1 text-slate-900">Año</label>
+        <label className="block text-sm font-medium mb-1 text-slate-200">
+          Año
+        </label>
         <input
           type="number"
-          className="border rounded p-2 w-full"
+          className="bg-slate-950 border border-slate-700 rounded p-2 w-full text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-600"
           value={anio}
           onChange={(e) => setAnio(Number(e.target.value))}
           min={2000}
@@ -73,7 +81,7 @@ export default function GestionForm() {
       <button
         type="submit"
         disabled={loading}
-        className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
+        className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded disabled:opacity-50"
       >
         {loading ? "Creando..." : "Crear gestión"}
       </button>

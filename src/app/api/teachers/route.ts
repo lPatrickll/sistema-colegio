@@ -9,6 +9,17 @@ function norm(str: string) {
   return str.trim().replace(/\s+/g, " ");
 }
 
+function isTeachingObject(x: any): x is Record<string, string[]> {
+  if (!x || typeof x !== "object" || Array.isArray(x)) return false;
+
+  for (const courseId of Object.keys(x)) {
+    const v = x[courseId];
+    if (!Array.isArray(v)) return false;
+    if (!v.every((s) => typeof s === "string" && s.trim().length > 0)) return false;
+  }
+  return true;
+}
+
 export async function POST(req: Request) {
   const auth = await requireAdmin();
   if (!auth.ok) {
@@ -26,6 +37,17 @@ export async function POST(req: Request) {
     const telefonoRaw = String(body?.telefono ?? "").trim();
     const activo = Boolean(body?.activo ?? true);
 
+    const teachingRaw = body?.teaching;
+    if (teachingRaw != null && !isTeachingObject(teachingRaw)) {
+      return NextResponse.json(
+        { error: "teaching inválido. Debe ser { [courseId]: subjectIds[] }" },
+        { status: 400 }
+      );
+    }
+    const teaching: Record<string, string[]> = isTeachingObject(teachingRaw)
+      ? teachingRaw
+      : {};
+
     if (!gestionId) {
       return NextResponse.json({ error: "Falta gestionId" }, { status: 400 });
     }
@@ -42,12 +64,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "CI es obligatorio" }, { status: 400 });
     }
     if (!/^\d{5,12}$/.test(ci)) {
-      return NextResponse.json({ error: "CI inválido (solo números, 5 a 12 dígitos)" }, { status: 400 });
+      return NextResponse.json(
+        { error: "CI inválido (solo números, 5 a 12 dígitos)" },
+        { status: 400 }
+      );
     }
 
     const telefono = telefonoRaw ? telefonoRaw : undefined;
     if (telefono && !/^\d{7,12}$/.test(telefono)) {
-      return NextResponse.json({ error: "Teléfono inválido (7 a 12 dígitos)" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Teléfono inválido (7 a 12 dígitos)" },
+        { status: 400 }
+      );
     }
 
     const gSnap = await adminDb.collection("gestiones").doc(gestionId).get();
@@ -61,6 +89,9 @@ export async function POST(req: Request) {
     }
 
     const ref = adminDb.collection("teachers").doc();
+
+    const nombreCompleto = `${nombres} ${apellidoPaterno} ${apellidoMaterno}`.trim();
+
     const payload = {
       gestionId,
       nombres,
@@ -69,8 +100,12 @@ export async function POST(req: Request) {
       ci,
       telefono: telefono ?? null,
       activo,
-      nombreCompleto: `${nombres} ${apellidoPaterno} ${apellidoMaterno}`,
-      nombreCompletoLower: `${nombres} ${apellidoPaterno} ${apellidoMaterno}`.toLowerCase(),
+
+      nombreCompleto,
+      nombreCompletoLower: nombreCompleto.toLowerCase(),
+
+      teaching,
+
       createdAt: new Date(),
       createdBy: auth.uid,
     };

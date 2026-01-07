@@ -37,7 +37,7 @@ export default function ProfesorForm({ gestionId, onCreated }: ProfesorFormProps
       const res = await fetch(`/api/courses?gestionId=${encodeURIComponent(gestionId)}`, {
         cache: "no-store",
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
       if (!res.ok) throw new Error(data?.error ?? "Error cargando cursos");
       setCourses(data?.courses ?? []);
     } catch (e: any) {
@@ -57,7 +57,7 @@ export default function ProfesorForm({ gestionId, onCreated }: ProfesorFormProps
         )}`,
         { cache: "no-store" }
       );
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
       if (!res.ok) throw new Error(data?.error ?? "Error cargando materias");
       setSubjectsByCourse((prev) => ({ ...prev, [courseId]: data?.subjects ?? [] }));
     } catch (e: any) {
@@ -95,6 +95,21 @@ export default function ProfesorForm({ gestionId, onCreated }: ProfesorFormProps
     return count;
   }, [selectedSubjects]);
 
+  function buildTeaching(): Record<string, string[]> {
+    const teaching: Record<string, string[]> = {};
+
+    for (const courseId of Object.keys(selectedCourses)) {
+      if (!selectedCourses[courseId]) continue;
+
+      const map = selectedSubjects[courseId] ?? {};
+      const subjectIds = Object.keys(map).filter((sid) => map[sid]);
+
+      if (subjectIds.length > 0) teaching[courseId] = subjectIds;
+    }
+
+    return teaching;
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -115,6 +130,11 @@ export default function ProfesorForm({ gestionId, onCreated }: ProfesorFormProps
       return setError("Debes asignar al menos una materia a este profesor.");
     }
 
+    const teaching = buildTeaching();
+    if (Object.keys(teaching).length === 0) {
+      return setError("Debes seleccionar materias dentro de al menos un curso.");
+    }
+
     try {
       setLoading(true);
 
@@ -129,50 +149,12 @@ export default function ProfesorForm({ gestionId, onCreated }: ProfesorFormProps
           ci: ciT,
           telefono: telT ? telT : undefined,
           activo,
+          teaching,
         }),
       });
 
       const tData = await tRes.json().catch(() => null);
       if (!tRes.ok) throw new Error(tData?.error ?? "Error al guardar profesor");
-
-      const teacherId = String(tData?.id ?? "").trim();
-      if (!teacherId) throw new Error("No se recibió teacherId del backend");
-
-      const creations: Promise<Response>[] = [];
-      for (const courseId of Object.keys(selectedSubjects)) {
-        const map = selectedSubjects[courseId] ?? {};
-        for (const subjectId of Object.keys(map)) {
-          if (!map[subjectId]) continue;
-          creations.push(
-            fetch("/api/assignments", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ gestionId, courseId, subjectId, teacherId }),
-            })
-          );
-        }
-      }
-
-      const results = await Promise.allSettled(creations);
-
-      const failed: string[] = [];
-      for (const r of results) {
-        if (r.status === "rejected") {
-          failed.push("Error creando asignación (network).");
-          continue;
-        }
-        const res = r.value;
-        if (!res.ok) {
-          const d = await res.json().catch(() => null);
-          failed.push(d?.error ?? `Error creando asignación (${res.status})`);
-        }
-      }
-
-      if (failed.length > 0) {
-        throw new Error(
-          `Profesor creado, pero algunas asignaciones fallaron:\n- ${failed.join("\n- ")}`
-        );
-      }
 
       setSuccess(true);
 
@@ -202,7 +184,7 @@ export default function ProfesorForm({ gestionId, onCreated }: ProfesorFormProps
       )}
       {success && (
         <div className="bg-emerald-950/40 border border-emerald-900 text-emerald-200 p-2 rounded">
-          Profesor creado y asignaciones registradas
+          Profesor creado correctamente
         </div>
       )}
 
@@ -273,7 +255,7 @@ export default function ProfesorForm({ gestionId, onCreated }: ProfesorFormProps
       <div className="bg-slate-900 border border-slate-800 rounded-lg p-4 space-y-3">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-base font-semibold text-slate-100">Asignación de cursos y materias</h2>
+            <h2 className="text-base font-semibold text-slate-100">Cursos y materias que dictará</h2>
             <p className="text-sm text-slate-400">
               Selecciona cursos y luego marca las materias que dictará en cada uno.
             </p>
@@ -337,9 +319,7 @@ export default function ProfesorForm({ gestionId, onCreated }: ProfesorFormProps
           </div>
         )}
 
-        <div className="text-xs text-slate-500">
-          Materias seleccionadas: {selectedPairsCount}
-        </div>
+        <div className="text-xs text-slate-500">Materias seleccionadas: {selectedPairsCount}</div>
       </div>
 
       <button

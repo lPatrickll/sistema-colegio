@@ -144,7 +144,8 @@ export default async function CursosPage({
                 <th className="text-left p-3 text-slate-200">Nombre</th>
                 <th className="text-left p-3 text-slate-200">Nivel</th>
                 <th className="text-left p-3 text-slate-200">Estado</th>
-                <th className="text-left p-3 text-slate-200">Acciones</th>
+                <th className="text-left p-3 text-slate-200">Estudiantes</th>
+                <th className="text-left p-3 text-slate-200">Horarios</th>
               </tr>
             </thead>
             <tbody>
@@ -161,6 +162,14 @@ export default async function CursosPage({
                       href={`/admin/gestion/${gestionId}/cursos/${c.id}/estudiantes`}
                     >
                       Ver estudiantes
+                    </Link>
+                  </td>
+                  <td className="p-3">
+                    <Link
+                      className="inline-flex text-xs bg-slate-800 hover:bg-slate-700 text-slate-100 px-3 py-2 rounded border border-slate-700"
+                      href={`/admin/gestion/${gestionId}/cursos/${c.id}/horario`}
+                    >
+                      Horario
                     </Link>
                   </td>
                 </tr>
