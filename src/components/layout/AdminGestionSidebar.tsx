@@ -41,6 +41,10 @@ export default function AdminGestionSidebar({ gestionId }: { gestionId: string }
           { label: "Crear profesor", href: `${base}/profesores/nuevo` },
         ],
       },
+      {
+        label: "Estudiantes",
+        items: [{ label: "Ver estudiantes", href: `${base}/estudiantes` }],
+      },
     ];
   }, [gestionId]);
 

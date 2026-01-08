@@ -55,6 +55,15 @@ export default async function GestionDashboardPage({
             Ir a cursos (Horario)
           </ButtonLink>
         </ActionCard>
+
+        <ActionCard
+          title="Estudiantes"
+          description="Ver todos los estudiantes de la gestión con filtros y exportación."
+        >
+          <ButtonLink href={`/admin/gestion/${gestionId}/estudiantes`} variant="primary">
+            Ver estudiantes
+          </ButtonLink>
+        </ActionCard>
       </div>
     </div>
   );
