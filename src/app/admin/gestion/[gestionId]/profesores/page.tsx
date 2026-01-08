@@ -166,7 +166,7 @@ export default async function ProfesoresPage({
                       className="inline-flex bg-slate-800 hover:bg-slate-700 text-slate-100 px-3 py-2 rounded border border-slate-700 text-xs"
                       href={`/admin/gestion/${gestionId}/profesores/${t.id}/editar`}
                     >
-                      Editar asignaciones
+                      Editar cursos/materias
                     </Link>
                   </td>
                 </tr>

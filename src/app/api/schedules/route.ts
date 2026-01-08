@@ -146,6 +146,13 @@ async function hasTeacherConflicts(params: {
   return null;
 }
 
+function teacherCanTeach(t: any, courseId: string, subjectId: string) {
+  const teaching = t?.teaching;
+  if (!teaching || typeof teaching !== "object") return false;
+  const list = teaching[courseId];
+  return Array.isArray(list) && list.includes(subjectId);
+}
+
 export async function GET(req: Request) {
   const auth = await requireAdmin();
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
@@ -211,17 +218,24 @@ export async function POST(req: Request) {
   const t = tSnap.data() as any;
   const s = sSnap.data() as any;
 
-  if (String(c?.gestionId ?? "") !== gestionId)
+  if (normalize(c?.gestionId) !== gestionId)
     return NextResponse.json({ error: "El curso no pertenece a esta gestión" }, { status: 400 });
 
-  if (String(t?.gestionId ?? "") !== gestionId)
+  if (normalize(t?.gestionId) !== gestionId)
     return NextResponse.json({ error: "El profesor no pertenece a esta gestión" }, { status: 400 });
 
-  if (String(s?.gestionId ?? "") !== gestionId)
+  if (normalize(s?.gestionId) !== gestionId)
     return NextResponse.json({ error: "La materia no pertenece a esta gestión" }, { status: 400 });
 
-  if (String(s?.courseId ?? "") !== courseId)
+  if (normalize(s?.courseId) !== courseId)
     return NextResponse.json({ error: "La materia no pertenece a ese curso." }, { status: 400 });
+
+  if (!teacherCanTeach(t, courseId, subjectId)) {
+    return NextResponse.json(
+      { error: "El profesor seleccionado no tiene asignada esa materia para ese curso." },
+      { status: 400 }
+    );
+  }
 
   const dup = await adminDb
     .collection("schedules")
@@ -232,10 +246,7 @@ export async function POST(req: Request) {
     .get();
 
   if (!dup.empty) {
-    return NextResponse.json(
-      { error: "Ya existe un horario para esa materia en ese curso." },
-      { status: 409 }
-    );
+    return NextResponse.json({ error: "Ya existe un horario para esa materia en ese curso." }, { status: 409 });
   }
 
   const courseConflict = await hasCourseConflicts({ gestionId, courseId, slots });
@@ -251,13 +262,10 @@ export async function POST(req: Request) {
     courseId,
     subjectId,
     teacherId,
-
     slots,
-
     courseNombre: c?.nombre ?? null,
     subjectNombre: s?.nombre ?? null,
     teacherNombreCompleto: t?.nombreCompleto ?? null,
-
     activo: true,
     createdAt,
     createdBy: auth.uid,

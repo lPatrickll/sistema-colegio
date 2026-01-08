@@ -142,6 +142,13 @@ async function hasTeacherConflicts(params: {
   return null;
 }
 
+function teacherCanTeach(t: any, courseId: string, subjectId: string) {
+  const teaching = t?.teaching;
+  if (!teaching || typeof teaching !== "object") return false;
+  const list = teaching[courseId];
+  return Array.isArray(list) && list.includes(subjectId);
+}
+
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ scheduleId: string }> }
@@ -172,12 +179,21 @@ export async function PATCH(
   const current = snap.data() as any;
   const gestionId = normalize(current?.gestionId);
   const courseId = normalize(current?.courseId);
+  const subjectId = normalize(current?.subjectId);
 
   const tSnap = await adminDb.collection("teachers").doc(teacherId).get();
   if (!tSnap.exists) return NextResponse.json({ error: "Profesor no existe" }, { status: 400 });
   const t = tSnap.data() as any;
+
   if (normalize(t?.gestionId) !== gestionId) {
     return NextResponse.json({ error: "El profesor no pertenece a esta gestión" }, { status: 400 });
+  }
+
+  if (!teacherCanTeach(t, courseId, subjectId)) {
+    return NextResponse.json(
+      { error: "El profesor seleccionado no tiene asignada esa materia para ese curso." },
+      { status: 400 }
+    );
   }
 
   const courseConflict = await hasCourseConflicts({ gestionId, courseId, slots, excludeId: scheduleId });

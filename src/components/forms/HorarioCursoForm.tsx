@@ -22,6 +22,9 @@ type Teacher = {
   gestionId: string;
 
   teaching?: Record<string, string[]>;
+  teachingCourseIds?: string[];
+  teachingSubjectIds?: string[];
+
   subjectsByCourse?: Record<string, string[]>;
   materiasPorCurso?: Record<string, string[]>;
   courseIds?: string[];
@@ -56,7 +59,6 @@ function toMin(hhmm: string) {
   const [h, m] = hhmm.split(":").map(Number);
   return h * 60 + m;
 }
-
 function uniq(arr: string[]) {
   return Array.from(new Set(arr.filter(Boolean)));
 }
@@ -81,26 +83,42 @@ function getAllowedSubjectsForCourse(teacher: Teacher, courseId: string): Set<st
   const listA = Array.isArray(teacher.assignments) ? teacher.assignments : null;
   if (listA) {
     const row = listA.find((x) => String(x?.courseId) === courseId);
-    const ids = Array.isArray(row?.subjectIds) ? row!.subjectIds : Array.isArray(row?.subjects) ? row!.subjects : null;
+    const ids = Array.isArray(row?.subjectIds)
+      ? row!.subjectIds
+      : Array.isArray(row?.subjects)
+      ? row!.subjects
+      : null;
     if (ids) return new Set(uniq(ids.map(String)));
   }
 
   const listB = Array.isArray(teacher.asignaciones) ? teacher.asignaciones : null;
   if (listB) {
     const row = listB.find((x) => String(x?.courseId) === courseId);
-    const ids = Array.isArray(row?.subjectIds) ? row!.subjectIds : Array.isArray(row?.subjects) ? row!.subjects : null;
+    const ids = Array.isArray(row?.subjectIds)
+      ? row!.subjectIds
+      : Array.isArray(row?.subjects)
+      ? row!.subjects
+      : null;
     if (ids) return new Set(uniq(ids.map(String)));
   }
 
-  const courseIds = Array.isArray(teacher.courseIds) ? teacher.courseIds : Array.isArray(teacher.courses) ? teacher.courses : null;
-  if (courseIds?.includes(courseId)) {
-    const globalSubjects = Array.isArray(teacher.subjectIds)
-      ? teacher.subjectIds
-      : Array.isArray(teacher.subjects)
-      ? teacher.subjects
-      : null;
+  const courseIds =
+    Array.isArray(teacher.teachingCourseIds) ? teacher.teachingCourseIds :
+    Array.isArray(teacher.courseIds) ? teacher.courseIds :
+    Array.isArray(teacher.courses) ? teacher.courses :
+    null;
 
-    if (globalSubjects && globalSubjects.length > 0) return new Set(uniq(globalSubjects.map(String)));
+  if (courseIds?.includes(courseId)) {
+    const globalSubjects =
+      Array.isArray(teacher.teachingSubjectIds) ? teacher.teachingSubjectIds :
+      Array.isArray(teacher.subjectIds) ? teacher.subjectIds :
+      Array.isArray(teacher.subjects) ? teacher.subjects :
+      null;
+
+    if (globalSubjects && globalSubjects.length > 0) {
+      return new Set(uniq(globalSubjects.map(String)));
+    }
+
     return null;
   }
 
@@ -111,11 +129,11 @@ function teacherCanTeachCourse(teacher: Teacher, courseId: string): boolean | nu
   const allowed = getAllowedSubjectsForCourse(teacher, courseId);
   if (allowed) return allowed.size > 0;
 
-  const courseIds = Array.isArray(teacher.courseIds)
-    ? teacher.courseIds
-    : Array.isArray(teacher.courses)
-    ? teacher.courses
-    : null;
+  const courseIds =
+    Array.isArray(teacher.teachingCourseIds) ? teacher.teachingCourseIds :
+    Array.isArray(teacher.courseIds) ? teacher.courseIds :
+    Array.isArray(teacher.courses) ? teacher.courses :
+    null;
 
   if (courseIds) return courseIds.includes(courseId);
 
@@ -125,13 +143,7 @@ function teacherCanTeachCourse(teacher: Teacher, courseId: string): boolean | nu
   return null;
 }
 
-export default function HorarioCursoForm({
-  gestionId,
-  cursoId,
-}: {
-  gestionId: string;
-  cursoId: string;
-}) {
+export default function HorarioCursoForm({ gestionId, cursoId }: { gestionId: string; cursoId: string }) {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
@@ -161,13 +173,12 @@ export default function HorarioCursoForm({
     return subjects.filter((s) => allowed.has(s.id));
   }, [subjects, selectedTeacher, cursoId]);
 
-
   const visibleTeachers = useMemo(() => {
     if (!cursoId) return teachers;
 
     let base = teachers.filter((t) => {
       const can = teacherCanTeachCourse(t, cursoId);
-      if (can === null) return true;
+      if (can === null) return true; // si no sabemos, no lo ocultamos
       return can;
     });
 
@@ -196,10 +207,15 @@ export default function HorarioCursoForm({
   }, [subjectId, visibleTeachers, teacherId]);
 
   useEffect(() => {
-    if (!teacherId || !subjectId) return;
+    if (!teacherId) return;
 
-    if (!visibleSubjects.some((s) => s.id === subjectId)) {
+    if (subjectId && !visibleSubjects.some((s) => s.id === subjectId)) {
       setSubjectId("");
+      return;
+    }
+
+    if (!subjectId && visibleSubjects.length === 1) {
+      setSubjectId(visibleSubjects[0].id);
     }
   }, [teacherId, subjectId, visibleSubjects]);
 
@@ -388,9 +404,7 @@ export default function HorarioCursoForm({
       <form onSubmit={handleSave} className="space-y-4">
         <div className="grid gap-4 md:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium mb-1 text-slate-200">
-              Materia
-            </label>
+            <label className="block text-sm font-medium mb-1 text-slate-200">Materia</label>
             <select
               className="bg-slate-950 border border-slate-700 rounded p-2 w-full text-slate-100"
               value={subjectId}
@@ -400,21 +414,18 @@ export default function HorarioCursoForm({
               <option value="">
                 {loadingLists ? "Cargando..." : "Seleccionar materia"}
               </option>
+
               {visibleSubjects.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.nombre}
                 </option>
               ))}
             </select>
-            <p className="text-xs text-slate-500 mt-1">
-              Materias del curso (y filtradas si eliges profesor).
-            </p>
+            <p className="text-xs text-slate-500 mt-1">Materias del curso (filtradas por profesor si eliges profesor).</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1 text-slate-200">
-              Profesor
-            </label>
+            <label className="block text-sm font-medium mb-1 text-slate-200">Profesor</label>
             <select
               className="bg-slate-950 border border-slate-700 rounded p-2 w-full text-slate-100"
               value={teacherId}
@@ -441,10 +452,7 @@ export default function HorarioCursoForm({
                 </option>
               ))}
             </select>
-
-            <p className="text-xs text-slate-500 mt-1">
-              Filtrado por curso y por materia (si seleccionas materia).
-            </p>
+            <p className="text-xs text-slate-500 mt-1">Filtrado por curso y por materia (si seleccionas materia).</p>
           </div>
         </div>
 
@@ -510,9 +518,7 @@ export default function HorarioCursoForm({
             </div>
           ))}
 
-          <p className="text-xs text-slate-500">
-            Se valida que no haya choques en curso ni en profesor.
-          </p>
+          <p className="text-xs text-slate-500">Se valida que no haya choques en curso ni en profesor.</p>
         </div>
 
         <div className="flex items-center gap-3">

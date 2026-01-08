@@ -1,7 +1,7 @@
 import Link from "next/link";
-import TeacherAssignmentsForm from "@/components/forms/TeacherAssignmentsForm";
+import TeacherTeachingForm from "@/components/forms/TeacherTeachingForm";
 
-export default async function EditarProfesorAsignacionesPage({
+export default async function EditarProfesorTeachingPage({
   params,
 }: {
   params: Promise<{ gestionId: string; teacherId: string }>;
@@ -12,7 +12,7 @@ export default async function EditarProfesorAsignacionesPage({
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-slate-100">
-          Editar asignaciones — Profesor {teacherId}
+          Editar cursos y materias — Profesor {teacherId}
         </h1>
 
         <Link
@@ -23,7 +23,7 @@ export default async function EditarProfesorAsignacionesPage({
         </Link>
       </div>
 
-      <TeacherAssignmentsForm gestionId={gestionId} teacherId={teacherId} />
+      <TeacherTeachingForm gestionId={gestionId} teacherId={teacherId} />
     </div>
   );
 }

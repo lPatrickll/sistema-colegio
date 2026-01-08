@@ -97,16 +97,12 @@ export default function ProfesorForm({ gestionId, onCreated }: ProfesorFormProps
 
   function buildTeaching(): Record<string, string[]> {
     const teaching: Record<string, string[]> = {};
-
     for (const courseId of Object.keys(selectedCourses)) {
       if (!selectedCourses[courseId]) continue;
-
       const map = selectedSubjects[courseId] ?? {};
       const subjectIds = Object.keys(map).filter((sid) => map[sid]);
-
       if (subjectIds.length > 0) teaching[courseId] = subjectIds;
     }
-
     return teaching;
   }
 

@@ -5,19 +5,90 @@ import { NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
 import { requireAdmin } from "@/app/api/_utils/requireAdmin";
 
+type TeachingMap = Record<string, string[]>;
+
 function norm(str: string) {
   return str.trim().replace(/\s+/g, " ");
 }
 
-function isTeachingObject(x: any): x is Record<string, string[]> {
-  if (!x || typeof x !== "object" || Array.isArray(x)) return false;
+function uniqStrings(arr: string[]) {
+  return Array.from(new Set(arr.map((x) => String(x).trim()).filter(Boolean)));
+}
 
-  for (const courseId of Object.keys(x)) {
-    const v = x[courseId];
-    if (!Array.isArray(v)) return false;
-    if (!v.every((s) => typeof s === "string" && s.trim().length > 0)) return false;
+function parseTeaching(raw: any): TeachingMap {
+  if (!raw || typeof raw !== "object") return {};
+  const out: TeachingMap = {};
+
+  for (const [courseIdRaw, subjectIdsRaw] of Object.entries(raw)) {
+    const courseId = String(courseIdRaw ?? "").trim();
+    if (!courseId) continue;
+
+    const subjectIds = Array.isArray(subjectIdsRaw)
+      ? uniqStrings(subjectIdsRaw as any[])
+      : [];
+
+    if (subjectIds.length) out[courseId] = subjectIds;
   }
-  return true;
+
+  return out;
+}
+
+async function validateTeaching(gestionId: string, teaching: TeachingMap): Promise<string | null> {
+  const courseIds = Object.keys(teaching);
+  if (courseIds.length === 0) return "Debes asignar al menos una materia al profesor.";
+
+  const courseSnaps = await Promise.all(
+    courseIds.map((id) => adminDb.collection("courses").doc(id).get())
+  );
+
+  const courseMap = new Map<string, any>();
+  for (let i = 0; i < courseIds.length; i++) {
+    const id = courseIds[i];
+    const snap = courseSnaps[i];
+    if (!snap.exists) return `Curso no existe: ${id}`;
+
+    const c = snap.data() as any;
+    if (String(c?.gestionId ?? "") !== gestionId) {
+      return `El curso ${id} no pertenece a esta gestión.`;
+    }
+    courseMap.set(id, c);
+  }
+
+  const allSubjectIds = uniqStrings(courseIds.flatMap((cid) => teaching[cid] ?? []));
+  if (allSubjectIds.length === 0) return "Debes seleccionar al menos una materia.";
+
+  const subjectSnaps = await Promise.all(
+    allSubjectIds.map((id) => adminDb.collection("subjects").doc(id).get())
+  );
+
+  const subjectMap = new Map<string, any>();
+  for (let i = 0; i < allSubjectIds.length; i++) {
+    const id = allSubjectIds[i];
+    const snap = subjectSnaps[i];
+    if (!snap.exists) return `Materia no existe: ${id}`;
+
+    const s = snap.data() as any;
+    if (String(s?.gestionId ?? "") !== gestionId) {
+      return `La materia ${id} no pertenece a esta gestión.`;
+    }
+    subjectMap.set(id, s);
+  }
+
+  for (const courseId of courseIds) {
+    const subjectIds = teaching[courseId] ?? [];
+    if (subjectIds.length === 0) return `Seleccionaste el curso ${courseId} pero no marcaste materias.`;
+
+    for (const subjectId of subjectIds) {
+      const s = subjectMap.get(subjectId);
+      if (!s) return `Materia no existe: ${subjectId}`;
+
+      if (String(s?.courseId ?? "") !== courseId) {
+        return `La materia ${subjectId} no pertenece al curso ${courseId}.`;
+      }
+    }
+  }
+
+  return null;
 }
 
 export async function POST(req: Request) {
@@ -37,32 +108,15 @@ export async function POST(req: Request) {
     const telefonoRaw = String(body?.telefono ?? "").trim();
     const activo = Boolean(body?.activo ?? true);
 
-    const teachingRaw = body?.teaching;
-    if (teachingRaw != null && !isTeachingObject(teachingRaw)) {
-      return NextResponse.json(
-        { error: "teaching inválido. Debe ser { [courseId]: subjectIds[] }" },
-        { status: 400 }
-      );
-    }
-    const teaching: Record<string, string[]> = isTeachingObject(teachingRaw)
-      ? teachingRaw
-      : {};
+    const teaching = parseTeaching(body?.teaching);
 
-    if (!gestionId) {
-      return NextResponse.json({ error: "Falta gestionId" }, { status: 400 });
-    }
-    if (!nombres) {
-      return NextResponse.json({ error: "Nombres es obligatorio" }, { status: 400 });
-    }
-    if (!apellidoPaterno) {
+    if (!gestionId) return NextResponse.json({ error: "Falta gestionId" }, { status: 400 });
+    if (!nombres) return NextResponse.json({ error: "Nombres es obligatorio" }, { status: 400 });
+    if (!apellidoPaterno)
       return NextResponse.json({ error: "Primer apellido es obligatorio" }, { status: 400 });
-    }
-    if (!apellidoMaterno) {
+    if (!apellidoMaterno)
       return NextResponse.json({ error: "Segundo apellido es obligatorio" }, { status: 400 });
-    }
-    if (!ci) {
-      return NextResponse.json({ error: "CI es obligatorio" }, { status: 400 });
-    }
+    if (!ci) return NextResponse.json({ error: "CI es obligatorio" }, { status: 400 });
     if (!/^\d{5,12}$/.test(ci)) {
       return NextResponse.json(
         { error: "CI inválido (solo números, 5 a 12 dígitos)" },
@@ -79,19 +133,22 @@ export async function POST(req: Request) {
     }
 
     const gSnap = await adminDb.collection("gestiones").doc(gestionId).get();
-    if (!gSnap.exists) {
-      return NextResponse.json({ error: "Gestión no existe" }, { status: 400 });
-    }
+    if (!gSnap.exists) return NextResponse.json({ error: "Gestión no existe" }, { status: 400 });
+
+    const teachingErr = await validateTeaching(gestionId, teaching);
+    if (teachingErr) return NextResponse.json({ error: teachingErr }, { status: 400 });
 
     const dup = await adminDb.collection("teachers").where("ci", "==", ci).limit(1).get();
     if (!dup.empty) {
       return NextResponse.json({ error: "Ya existe un profesor con ese CI" }, { status: 400 });
     }
 
+    const teachingCourseIds = Object.keys(teaching);
+    const teachingSubjectIds = uniqStrings(
+      teachingCourseIds.flatMap((cid) => teaching[cid] ?? [])
+    );
+
     const ref = adminDb.collection("teachers").doc();
-
-    const nombreCompleto = `${nombres} ${apellidoPaterno} ${apellidoMaterno}`.trim();
-
     const payload = {
       gestionId,
       nombres,
@@ -101,10 +158,12 @@ export async function POST(req: Request) {
       telefono: telefono ?? null,
       activo,
 
-      nombreCompleto,
-      nombreCompletoLower: nombreCompleto.toLowerCase(),
+      nombreCompleto: `${nombres} ${apellidoPaterno} ${apellidoMaterno}`,
+      nombreCompletoLower: `${nombres} ${apellidoPaterno} ${apellidoMaterno}`.toLowerCase(),
 
       teaching,
+      teachingCourseIds,
+      teachingSubjectIds,
 
       createdAt: new Date(),
       createdBy: auth.uid,
@@ -115,33 +174,25 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, id: ref.id, data: payload }, { status: 201 });
   } catch (err: any) {
     console.error("[POST /api/teachers] Error:", err);
-    return NextResponse.json(
-      { error: err?.message ?? "Error al crear profesor" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: err?.message ?? "Error al crear profesor" }, { status: 500 });
   }
 }
 
 export async function GET(req: Request) {
   const auth = await requireAdmin();
-  if (!auth.ok) {
-    return NextResponse.json({ error: auth.error }, { status: auth.status });
-  }
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   try {
     const { searchParams } = new URL(req.url);
     const gestionId = String(searchParams.get("gestionId") ?? "").trim();
+    if (!gestionId) return NextResponse.json({ error: "Falta gestionId" }, { status: 400 });
 
-    if (!gestionId) {
-      return NextResponse.json({ error: "Falta gestionId" }, { status: 400 });
-    }
-
-    const snap = await adminDb
-      .collection("teachers")
-      .where("gestionId", "==", gestionId)
-      .get();
-
+    const snap = await adminDb.collection("teachers").where("gestionId", "==", gestionId).get();
     const teachers = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
+
+    teachers.sort((a: any, b: any) =>
+      String(a?.nombreCompletoLower ?? "").localeCompare(String(b?.nombreCompletoLower ?? ""))
+    );
 
     return NextResponse.json({ teachers }, { status: 200 });
   } catch (err: any) {

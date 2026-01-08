@@ -13,15 +13,12 @@ export default async function GestionDashboardPage({
       <header className="space-y-1">
         <h1 className="text-2xl font-bold text-slate-100">Gestión {gestionId}</h1>
         <p className="text-sm text-slate-400">
-          Accesos rápidos para administrar cursos, materias, profesores y asignaciones.
+          Accesos rápidos para administrar cursos, materias, profesores y horarios.
         </p>
       </header>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <ActionCard
-          title="Cursos"
-          description="Crea cursos y administra su estructura."
-        >
+        <ActionCard title="Cursos" description="Crea cursos y administra su estructura.">
           <ButtonLink href={`/admin/gestion/${gestionId}/cursos`} variant="secondary">
             Ver cursos
           </ButtonLink>
@@ -30,10 +27,7 @@ export default async function GestionDashboardPage({
           </ButtonLink>
         </ActionCard>
 
-        <ActionCard
-          title="Materias"
-          description="Crea materias dentro de cursos."
-        >
+        <ActionCard title="Materias" description="Crea materias dentro de cursos.">
           <ButtonLink href={`/admin/gestion/${gestionId}/materias`} variant="secondary">
             Ver materias
           </ButtonLink>
@@ -42,10 +36,7 @@ export default async function GestionDashboardPage({
           </ButtonLink>
         </ActionCard>
 
-        <ActionCard
-          title="Profesores"
-          description="Registra profesores y asigna cursos/materias."
-        >
+        <ActionCard title="Profesores" description="Registra profesores y asigna cursos/materias.">
           <ButtonLink href={`/admin/gestion/${gestionId}/profesores`} variant="secondary">
             Ver profesores
           </ButtonLink>
@@ -54,15 +45,9 @@ export default async function GestionDashboardPage({
           </ButtonLink>
         </ActionCard>
 
-        <ActionCard
-          title="Asignaciones"
-          description="Define qué profesor dicta qué materia en qué curso."
-        >
-          <ButtonLink href={`/admin/gestion/${gestionId}/asignaciones`} variant="secondary">
-            Ver asignaciones
-          </ButtonLink>
-          <ButtonLink href={`/admin/gestion/${gestionId}/asignaciones/nuevo`} variant="primary">
-            Nueva asignación
+        <ActionCard title="Horarios" description="Organiza días y horas por materia dentro de cada curso.">
+          <ButtonLink href={`/admin/gestion/${gestionId}/cursos`} variant="primary">
+            Ir a cursos (Horario)
           </ButtonLink>
         </ActionCard>
       </div>

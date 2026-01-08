@@ -1,17 +1,19 @@
 import EstudianteForm from "@/components/forms/EstudianteForm";
 
-export default function NuevoEstudiantePage({
+export default async function NuevoEstudiantePage({
   params,
 }: {
-  params: { gestionId: string; cursoId: string };
+  params: Promise<{ gestionId: string; cursoId: string }>;
 }) {
+  const { gestionId, cursoId } = await params;
+
   return (
     <div className="p-6 space-y-4">
       <h1 className="text-2xl font-bold text-slate-100">
-        Crear estudiante — Gestión {params.gestionId} / Curso {params.cursoId}
+        Crear estudiante — Gestión {gestionId} / Curso {cursoId}
       </h1>
 
-      <EstudianteForm gestionId={params.gestionId} cursoId={params.cursoId} />
+      <EstudianteForm gestionId={gestionId} cursoId={cursoId} />
     </div>
   );
 }
