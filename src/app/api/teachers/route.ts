@@ -2,7 +2,7 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebase-admin";
+import { adminAuth, adminDb } from "@/lib/firebase-admin";
 import { requireAdmin } from "@/app/api/_utils/requireAdmin";
 
 type TeachingMap = Record<string, string[]>;
@@ -37,40 +37,30 @@ async function validateTeaching(gestionId: string, teaching: TeachingMap): Promi
   const courseIds = Object.keys(teaching);
   if (courseIds.length === 0) return "Debes asignar al menos una materia al profesor.";
 
-  const courseSnaps = await Promise.all(
-    courseIds.map((id) => adminDb.collection("courses").doc(id).get())
-  );
+  const courseSnaps = await Promise.all(courseIds.map((id) => adminDb.collection("courses").doc(id).get()));
 
-  const courseMap = new Map<string, any>();
   for (let i = 0; i < courseIds.length; i++) {
     const id = courseIds[i];
     const snap = courseSnaps[i];
     if (!snap.exists) return `Curso no existe: ${id}`;
 
     const c = snap.data() as any;
-    if (String(c?.gestionId ?? "") !== gestionId) {
-      return `El curso ${id} no pertenece a esta gestión.`;
-    }
-    courseMap.set(id, c);
+    if (String(c?.gestionId ?? "") !== gestionId) return `El curso ${id} no pertenece a esta gestión.`;
   }
 
   const allSubjectIds = uniqStrings(courseIds.flatMap((cid) => teaching[cid] ?? []));
   if (allSubjectIds.length === 0) return "Debes seleccionar al menos una materia.";
 
-  const subjectSnaps = await Promise.all(
-    allSubjectIds.map((id) => adminDb.collection("subjects").doc(id).get())
-  );
-
+  const subjectSnaps = await Promise.all(allSubjectIds.map((id) => adminDb.collection("subjects").doc(id).get()));
   const subjectMap = new Map<string, any>();
+
   for (let i = 0; i < allSubjectIds.length; i++) {
     const id = allSubjectIds[i];
     const snap = subjectSnaps[i];
     if (!snap.exists) return `Materia no existe: ${id}`;
 
     const s = snap.data() as any;
-    if (String(s?.gestionId ?? "") !== gestionId) {
-      return `La materia ${id} no pertenece a esta gestión.`;
-    }
+    if (String(s?.gestionId ?? "") !== gestionId) return `La materia ${id} no pertenece a esta gestión.`;
     subjectMap.set(id, s);
   }
 
@@ -81,21 +71,22 @@ async function validateTeaching(gestionId: string, teaching: TeachingMap): Promi
     for (const subjectId of subjectIds) {
       const s = subjectMap.get(subjectId);
       if (!s) return `Materia no existe: ${subjectId}`;
-
-      if (String(s?.courseId ?? "") !== courseId) {
-        return `La materia ${subjectId} no pertenece al curso ${courseId}.`;
-      }
+      if (String(s?.courseId ?? "") !== courseId) return `La materia ${subjectId} no pertenece al curso ${courseId}.`;
     }
   }
 
   return null;
 }
 
+function isEmail(email: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
 export async function POST(req: Request) {
   const auth = await requireAdmin();
-  if (!auth.ok) {
-    return NextResponse.json({ error: auth.error }, { status: auth.status });
-  }
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
+  let createdAuthUid: string | null = null;
 
   try {
     const body = await req.json();
@@ -105,6 +96,7 @@ export async function POST(req: Request) {
     const apellidoPaterno = norm(String(body?.apellidoPaterno ?? ""));
     const apellidoMaterno = norm(String(body?.apellidoMaterno ?? ""));
     const ci = String(body?.ci ?? "").trim();
+    const email = String(body?.email ?? "").trim().toLowerCase();
     const telefonoRaw = String(body?.telefono ?? "").trim();
     const activo = Boolean(body?.activo ?? true);
 
@@ -112,24 +104,20 @@ export async function POST(req: Request) {
 
     if (!gestionId) return NextResponse.json({ error: "Falta gestionId" }, { status: 400 });
     if (!nombres) return NextResponse.json({ error: "Nombres es obligatorio" }, { status: 400 });
-    if (!apellidoPaterno)
-      return NextResponse.json({ error: "Primer apellido es obligatorio" }, { status: 400 });
-    if (!apellidoMaterno)
-      return NextResponse.json({ error: "Segundo apellido es obligatorio" }, { status: 400 });
+    if (!apellidoPaterno) return NextResponse.json({ error: "Primer apellido es obligatorio" }, { status: 400 });
+    if (!apellidoMaterno) return NextResponse.json({ error: "Segundo apellido es obligatorio" }, { status: 400 });
+
     if (!ci) return NextResponse.json({ error: "CI es obligatorio" }, { status: 400 });
-    if (!/^\d{5,12}$/.test(ci)) {
-      return NextResponse.json(
-        { error: "CI inválido (solo números, 5 a 12 dígitos)" },
-        { status: 400 }
-      );
+    if (!/^\d{6,12}$/.test(ci)) {
+      return NextResponse.json({ error: "CI inválido (solo números, 6 a 12 dígitos)" }, { status: 400 });
     }
+
+    if (!email) return NextResponse.json({ error: "Correo es obligatorio" }, { status: 400 });
+    if (!isEmail(email)) return NextResponse.json({ error: "Correo inválido" }, { status: 400 });
 
     const telefono = telefonoRaw ? telefonoRaw : undefined;
     if (telefono && !/^\d{7,12}$/.test(telefono)) {
-      return NextResponse.json(
-        { error: "Teléfono inválido (7 a 12 dígitos)" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Teléfono inválido (7 a 12 dígitos)" }, { status: 400 });
     }
 
     const gSnap = await adminDb.collection("gestiones").doc(gestionId).get();
@@ -138,43 +126,88 @@ export async function POST(req: Request) {
     const teachingErr = await validateTeaching(gestionId, teaching);
     if (teachingErr) return NextResponse.json({ error: teachingErr }, { status: 400 });
 
-    const dup = await adminDb.collection("teachers").where("ci", "==", ci).limit(1).get();
-    if (!dup.empty) {
-      return NextResponse.json({ error: "Ya existe un profesor con ese CI" }, { status: 400 });
-    }
+    const dupCI = await adminDb.collection("teachers").where("ci", "==", ci).limit(1).get();
+    if (!dupCI.empty) return NextResponse.json({ error: "Ya existe un profesor con ese CI" }, { status: 400 });
+
+    const dupEmail = await adminDb.collection("teachers").where("email", "==", email).limit(1).get();
+    if (!dupEmail.empty) return NextResponse.json({ error: "Ya existe un profesor con ese correo" }, { status: 400 });
+
+    const nombreCompleto = `${nombres} ${apellidoPaterno} ${apellidoMaterno}`.trim();
+
+    const userRecord = await adminAuth.createUser({
+      email,
+      password: ci,
+      displayName: nombreCompleto,
+      disabled: !activo,
+    });
+
+    createdAuthUid = userRecord.uid;
 
     const teachingCourseIds = Object.keys(teaching);
-    const teachingSubjectIds = uniqStrings(
-      teachingCourseIds.flatMap((cid) => teaching[cid] ?? [])
-    );
+    const teachingSubjectIds = uniqStrings(teachingCourseIds.flatMap((cid) => teaching[cid] ?? []));
 
-    const ref = adminDb.collection("teachers").doc();
-    const payload = {
+    const teacherRef = adminDb.collection("teachers").doc();
+
+    const teacherPayload = {
       gestionId,
       nombres,
       apellidoPaterno,
       apellidoMaterno,
+      nombreCompleto,
+      nombreCompletoLower: nombreCompleto.toLowerCase(),
       ci,
+      email,
+      authUid: createdAuthUid,
       telefono: telefono ?? null,
       activo,
-
-      nombreCompleto: `${nombres} ${apellidoPaterno} ${apellidoMaterno}`,
-      nombreCompletoLower: `${nombres} ${apellidoPaterno} ${apellidoMaterno}`.toLowerCase(),
-
       teaching,
       teachingCourseIds,
       teachingSubjectIds,
-
       createdAt: new Date(),
       createdBy: auth.uid,
     };
 
-    await ref.set(payload);
+    const userDocRef = adminDb.collection("users").doc(createdAuthUid);
+    const userDoc = {
+      roles: ["TEACHER"],
+      teacherId: teacherRef.id,
+      gestionId,
+      email,
+      displayName: nombreCompleto,
+      createdAt: new Date(),
+      createdBy: auth.uid,
+    };
 
-    return NextResponse.json({ success: true, id: ref.id, data: payload }, { status: 201 });
+    const batch = adminDb.batch();
+    batch.set(teacherRef, teacherPayload);
+    batch.set(userDocRef, userDoc, { merge: true });
+    await batch.commit();
+
+    return NextResponse.json({ success: true, id: teacherRef.id }, { status: 201 });
   } catch (err: any) {
     console.error("[POST /api/teachers] Error:", err);
-    return NextResponse.json({ error: err?.message ?? "Error al crear profesor" }, { status: 500 });
+
+    if (createdAuthUid) {
+      try {
+        await adminAuth.deleteUser(createdAuthUid);
+      } catch (e) {
+        console.error("[POST /api/teachers] rollback deleteUser failed:", e);
+      }
+    }
+
+    const msg = String(err?.message ?? "Error al crear profesor");
+
+    if (msg.includes("auth/email-already-exists")) {
+      return NextResponse.json({ error: "Ese correo ya está registrado en el sistema" }, { status: 409 });
+    }
+    if (msg.includes("auth/invalid-password")) {
+      return NextResponse.json(
+        { error: "Contraseña inválida. Revisa el CI (Firebase requiere mínimo 6 caracteres)" },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
 
@@ -197,9 +230,6 @@ export async function GET(req: Request) {
     return NextResponse.json({ teachers }, { status: 200 });
   } catch (err: any) {
     console.error("[GET /api/teachers] Error:", err);
-    return NextResponse.json(
-      { error: err?.message ?? "Error al listar profesores" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: err?.message ?? "Error al listar profesores" }, { status: 500 });
   }
 }

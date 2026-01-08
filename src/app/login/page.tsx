@@ -1,9 +1,10 @@
-// src/app/login/page.tsx
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LoginUseCase } from "@/components/Login/application/login.usecase";
+import { db } from "@/lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
 
 const loginUseCase = new LoginUseCase();
 
@@ -12,7 +13,6 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -24,7 +24,16 @@ export default function LoginPage() {
     try {
       const user = await loginUseCase.execute({ email, password });
 
-      router.push("/admin");
+      const snap = await getDoc(doc(db, "users", user.uid));
+      const data: any = snap.exists() ? snap.data() : {};
+      const roles: string[] = Array.isArray(data?.roles) ? data.roles : data?.role ? [String(data.role)] : [];
+      const upper = roles.map((r) => String(r).toUpperCase());
+
+      if (upper.includes("ADMIN")) router.push("/admin");
+      else if (upper.includes("TEACHER")) router.push("/teacher");
+      else if (upper.includes("STUDENT")) router.push("/student");
+      else router.push("/");
+
       router.refresh();
     } catch (err) {
       console.error(err);
@@ -42,17 +51,14 @@ export default function LoginPage() {
           <p className="text-sm text-slate-400">Accede al sistema académico</p>
         </div>
 
-        <form
-          onSubmit={handleSubmit}
-          className="bg-slate-900 border border-slate-800 rounded-lg p-6 shadow-sm space-y-4"
-        >
+        <form onSubmit={handleSubmit} className="bg-slate-900 border border-slate-800 rounded-lg p-6 shadow-sm space-y-4">
           <label className="flex flex-col gap-1 text-sm text-slate-300">
             Correo
             <input
               type="email"
               value={email}
-              onChange={e => setEmail(e.target.value)}
-              className="bg-slate-950 border border-slate-700 rounded-md p-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-600"
+              onChange={(e) => setEmail(e.target.value)}
+              className="bg-slate-950 border border-slate-700 rounded-md p-2 text-sm text-slate-100"
               required
             />
           </label>
@@ -62,8 +68,8 @@ export default function LoginPage() {
             <input
               type="password"
               value={password}
-              onChange={e => setPassword(e.target.value)}
-              className="bg-slate-950 border border-slate-700 rounded-md p-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-600"
+              onChange={(e) => setPassword(e.target.value)}
+              className="bg-slate-950 border border-slate-700 rounded-md p-2 text-sm text-slate-100"
               required
             />
           </label>

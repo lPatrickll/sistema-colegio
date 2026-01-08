@@ -15,15 +15,14 @@ export default function ProfesorForm({ gestionId, onCreated }: ProfesorFormProps
   const [apellidoPaterno, setApellidoPaterno] = useState("");
   const [apellidoMaterno, setApellidoMaterno] = useState("");
   const [ci, setCi] = useState("");
+  const [email, setEmail] = useState("");
   const [telefono, setTelefono] = useState("");
   const [activo, setActivo] = useState(true);
 
   const [courses, setCourses] = useState<Course[]>([]);
   const [subjectsByCourse, setSubjectsByCourse] = useState<Record<string, Subject[]>>({});
   const [selectedCourses, setSelectedCourses] = useState<Record<string, boolean>>({});
-  const [selectedSubjects, setSelectedSubjects] = useState<Record<string, Record<string, boolean>>>(
-    {}
-  );
+  const [selectedSubjects, setSelectedSubjects] = useState<Record<string, Record<string, boolean>>>({});
 
   const [loading, setLoading] = useState(false);
   const [loadingCourses, setLoadingCourses] = useState(false);
@@ -49,12 +48,9 @@ export default function ProfesorForm({ gestionId, onCreated }: ProfesorFormProps
 
   async function loadSubjects(courseId: string) {
     if (subjectsByCourse[courseId]) return;
-
     try {
       const res = await fetch(
-        `/api/subjects?gestionId=${encodeURIComponent(gestionId)}&courseId=${encodeURIComponent(
-          courseId
-        )}`,
+        `/api/subjects?gestionId=${encodeURIComponent(gestionId)}&courseId=${encodeURIComponent(courseId)}`,
         { cache: "no-store" }
       );
       const data = await res.json().catch(() => null);
@@ -71,12 +67,8 @@ export default function ProfesorForm({ gestionId, onCreated }: ProfesorFormProps
 
   function toggleCourse(courseId: string, checked: boolean) {
     setSelectedCourses((prev) => ({ ...prev, [courseId]: checked }));
-
-    if (checked) {
-      loadSubjects(courseId);
-    } else {
-      setSelectedSubjects((prev) => ({ ...prev, [courseId]: {} }));
-    }
+    if (checked) loadSubjects(courseId);
+    else setSelectedSubjects((prev) => ({ ...prev, [courseId]: {} }));
   }
 
   function toggleSubject(courseId: string, subjectId: string, checked: boolean) {
@@ -116,20 +108,20 @@ export default function ProfesorForm({ gestionId, onCreated }: ProfesorFormProps
     const apM = apellidoMaterno.trim();
     const ciT = ci.trim();
     const telT = telefono.trim();
+    const emailT = email.trim().toLowerCase();
 
     if (!n) return setError("Nombres es obligatorio");
     if (!apP) return setError("Primer apellido es obligatorio");
     if (!apM) return setError("Segundo apellido es obligatorio");
     if (!ciT) return setError("CI es obligatorio");
+    if (!/^\d{6,12}$/.test(ciT)) return setError("CI inválido (solo números, 6 a 12 dígitos)");
+    if (!emailT) return setError("Correo es obligatorio");
+    if (!/^([^\s@]+)@([^\s@]+)\.([^\s@]+)$/.test(emailT)) return setError("Correo inválido");
 
-    if (selectedPairsCount === 0) {
-      return setError("Debes asignar al menos una materia a este profesor.");
-    }
+    if (selectedPairsCount === 0) return setError("Debes asignar al menos una materia a este profesor.");
 
     const teaching = buildTeaching();
-    if (Object.keys(teaching).length === 0) {
-      return setError("Debes seleccionar materias dentro de al menos un curso.");
-    }
+    if (Object.keys(teaching).length === 0) return setError("Debes seleccionar materias dentro de al menos un curso.");
 
     try {
       setLoading(true);
@@ -143,6 +135,7 @@ export default function ProfesorForm({ gestionId, onCreated }: ProfesorFormProps
           apellidoPaterno: apP,
           apellidoMaterno: apM,
           ci: ciT,
+          email: emailT,
           telefono: telT ? telT : undefined,
           activo,
           teaching,
@@ -158,6 +151,7 @@ export default function ProfesorForm({ gestionId, onCreated }: ProfesorFormProps
       setApellidoPaterno("");
       setApellidoMaterno("");
       setCi("");
+      setEmail("");
       setTelefono("");
       setActivo(true);
       setSelectedCourses({});
@@ -206,6 +200,18 @@ export default function ProfesorForm({ gestionId, onCreated }: ProfesorFormProps
         </div>
 
         <div>
+          <label className="block text-sm font-medium mb-1 text-slate-200">Correo electrónico</label>
+          <input
+            type="email"
+            className="bg-slate-950 border border-slate-700 rounded p-2 w-full text-slate-100"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Ej: profesor@colegio.com"
+          />
+          <p className="mt-1 text-xs text-slate-500">La contraseña por defecto será el CI.</p>
+        </div>
+
+        <div>
           <label className="block text-sm font-medium mb-1 text-slate-200">Primer apellido</label>
           <input
             className="bg-slate-950 border border-slate-700 rounded p-2 w-full text-slate-100"
@@ -236,15 +242,8 @@ export default function ProfesorForm({ gestionId, onCreated }: ProfesorFormProps
         </div>
 
         <div className="flex items-center gap-2 pt-7">
-          <input
-            id="activo"
-            type="checkbox"
-            checked={activo}
-            onChange={(e) => setActivo(e.target.checked)}
-          />
-          <label htmlFor="activo" className="text-sm text-slate-200">
-            Activo
-          </label>
+          <input id="activo" type="checkbox" checked={activo} onChange={(e) => setActivo(e.target.checked)} />
+          <label htmlFor="activo" className="text-sm text-slate-200">Activo</label>
         </div>
       </div>
 
@@ -252,9 +251,7 @@ export default function ProfesorForm({ gestionId, onCreated }: ProfesorFormProps
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-base font-semibold text-slate-100">Cursos y materias que dictará</h2>
-            <p className="text-sm text-slate-400">
-              Selecciona cursos y luego marca las materias que dictará en cada uno.
-            </p>
+            <p className="text-sm text-slate-400">Selecciona cursos y marca materias por curso.</p>
           </div>
 
           <button
@@ -279,11 +276,7 @@ export default function ProfesorForm({ gestionId, onCreated }: ProfesorFormProps
               return (
                 <div key={c.id} className="border border-slate-800 rounded-lg p-3 bg-slate-950/40">
                   <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={(e) => toggleCourse(c.id, e.target.checked)}
-                    />
+                    <input type="checkbox" checked={checked} onChange={(e) => toggleCourse(c.id, e.target.checked)} />
                     <div className="text-sm font-medium text-slate-100">{c.nombre}</div>
                   </div>
 
