@@ -156,7 +156,7 @@ export default async function ProfesoresPage({
                   <td className="p-3">
                     <Link
                       className="inline-flex text-xs bg-slate-800 hover:bg-slate-700 text-slate-100 px-3 py-2 rounded border border-slate-700"
-                      href={`/admin/gestion/${gestionId}/profesores/${t.id}`}
+                      href={`/admin/gestion/${gestionId}/profesores/${t.id}/editar`}
                     >
                       Editar cursos/materias
                     </Link>
