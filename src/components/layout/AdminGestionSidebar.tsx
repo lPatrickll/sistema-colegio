@@ -41,13 +41,6 @@ export default function AdminGestionSidebar({ gestionId }: { gestionId: string }
           { label: "Crear profesor", href: `${base}/profesores/nuevo` },
         ],
       },
-      {
-        label: "Asignaciones",
-        items: [
-          { label: "Ver asignaciones", href: `${base}/asignaciones` },
-          { label: "Crear asignación", href: `${base}/asignaciones/nuevo` },
-        ],
-      },
     ];
   }, [gestionId]);
 
@@ -75,7 +68,7 @@ export default function AdminGestionSidebar({ gestionId }: { gestionId: string }
         >
           ← Volver a gestiones
         </Link>
-        
+
         <Link
           href={baseHref}
           className={cx(

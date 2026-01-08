@@ -1,88 +1,101 @@
+// src/app/admin/gestion/[gestionId]/cursos/[cursoId]/estudiantes/page.tsx
+import Link from "next/link";
+import { adminDb } from "@/lib/firebase-admin";
+
 export const runtime = "nodejs";
 
-import Link from "next/link";
-import { cookies } from "next/headers";
-
-type Row = {
-  inscriptionId: string;
-  studentId: string;
-  student: null | {
-    id: string;
-    nombre?: string;
-    apellido?: string;
-    nombreCompleto?: string;
-    ci?: string;
-    codigo?: string;
-    estado?: string;
-  };
-};
-
-async function getStudentsByCourse(gestionId: string, courseId: string) {
-  const cookieStore = await cookies();
-  const session = cookieStore.get("__session")?.value;
-
-  const base =
-    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "http://localhost:3000";
-
-  const url =
-    `${base}/api/inscriptions/by-course?gestionId=${encodeURIComponent(gestionId)}` +
-    `&courseId=${encodeURIComponent(courseId)}`;
-
-  const res = await fetch(url, {
-    cache: "no-store",
-    headers: session ? { Cookie: `__session=${session}` } : {},
-  });
-
-  const data = await res.json().catch(() => null);
-  if (!res.ok) throw new Error(data?.error ?? "Error cargando estudiantes");
-  return (data?.students ?? []) as Row[];
-}
-
-export default async function EstudiantesCursoPage({
+export default async function EstudiantesPage({
   params,
 }: {
   params: Promise<{ gestionId: string; cursoId: string }>;
 }) {
   const { gestionId, cursoId } = await params;
 
-  const rows = await getStudentsByCourse(gestionId, cursoId);
+  if (!gestionId || !cursoId) {
+    return (
+      <div className="p-6 text-slate-100">
+        <div className="bg-slate-900 border border-slate-800 rounded-lg p-4 text-slate-300">
+          Parámetros inválidos: gestionId o cursoId no llegaron correctamente.
+        </div>
+      </div>
+    );
+  }
+
+  const insSnap = await adminDb
+    .collection("inscriptions")
+    .where("gestionId", "==", gestionId)
+    .where("courseId", "==", cursoId)
+    .where("estado", "==", "ACTIVO")
+    .get();
+
+  const inscriptions = insSnap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
+
+  inscriptions.sort((a, b) => {
+    const ta =
+      a?.createdAt?.toMillis?.() ??
+      (a?.createdAt instanceof Date ? a.createdAt.getTime() : 0);
+    const tb =
+      b?.createdAt?.toMillis?.() ??
+      (b?.createdAt instanceof Date ? b.createdAt.getTime() : 0);
+    return tb - ta;
+  });
+
+  const studentIds = inscriptions
+    .map((d) => String(d?.studentId ?? ""))
+    .filter(Boolean);
+
+  const students = await Promise.all(
+    studentIds.map(async (id) => {
+      const s = await adminDb.collection("students").doc(id).get();
+      if (!s.exists) return null;
+      return { id: s.id, ...(s.data() as any) };
+    })
+  );
+
+  const list = students.filter(Boolean) as any[];
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="p-6 space-y-4 text-slate-100">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-slate-100">
+        <h1 className="text-2xl font-bold">
           Estudiantes — Curso {cursoId} (Gestión {gestionId})
         </h1>
 
         <Link
-          className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded"
           href={`/admin/gestion/${gestionId}/cursos/${cursoId}/estudiantes/nuevo`}
+          className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded"
         >
           Nuevo estudiante
         </Link>
       </div>
 
-      {rows.length === 0 ? (
-        <div className="bg-slate-900 border border-slate-800 rounded-lg p-4 text-slate-400">
+      {list.length === 0 ? (
+        <div className="bg-slate-900 border border-slate-800 rounded-lg p-4 text-slate-300">
           No hay estudiantes registrados.
         </div>
       ) : (
         <div className="space-y-2">
-          {rows.map((r) => (
-            <div key={r.inscriptionId} className="bg-slate-900 border border-slate-800 rounded p-3">
-              <div className="font-semibold text-slate-100">
-                {(() => {
-                  const fullName =
-                    r.student?.nombreCompleto ??
-                    `${r.student?.nombre ?? ""} ${r.student?.apellido ?? ""}`.trim();
-
-                  return fullName || "Sin nombre";
-                })()}
+          {list.map((s) => (
+            <div
+              key={s.id}
+              className="bg-slate-900 border border-slate-800 rounded-lg p-4 flex items-center justify-between gap-3"
+            >
+              <div className="min-w-0">
+                <div className="font-semibold truncate">
+                  {s.nombreCompleto ?? `${s.nombre ?? ""} ${s.apellido ?? ""}`.trim()}
+                </div>
+                <div className="text-sm text-slate-400">
+                  CI: {s.ci ?? "—"} • Código: {s.codigo ?? "—"} • {s.estado ?? "—"}
+                </div>
               </div>
-              <div className="text-sm text-slate-400">
-                {r.student?.ci ? `CI: ${r.student.ci} • ` : ""}
-                {r.student?.codigo ? `Código: ${r.student.codigo} • ` : ""}
-                {r.student?.estado ?? "ACTIVO"}
+
+              <div className="shrink-0 flex gap-2">
+                <Link
+                  href={`/admin/gestion/${gestionId}/cursos/${cursoId}/estudiantes/${s.id}/editar`}
+                  className="px-3 py-2 rounded border border-slate-700 text-slate-100 hover:bg-slate-800 text-sm"
+                >
+                  Editar
+                </Link>
               </div>
             </div>
           ))}

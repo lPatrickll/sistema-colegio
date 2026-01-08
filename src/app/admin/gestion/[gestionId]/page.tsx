@@ -85,7 +85,7 @@ export default async function AdminGestionHomePage({
           </div>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-lg p-4">
+        {/* <div className="bg-slate-900 border border-slate-800 rounded-lg p-4">
           <h2 className="font-semibold">Asignaciones</h2>
           <p className="text-sm text-slate-400">Asigna profesores a cursos y materias.</p>
           <div className="mt-3 flex gap-2">
@@ -102,7 +102,7 @@ export default async function AdminGestionHomePage({
               Crear asignación
             </Link>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );

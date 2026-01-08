@@ -1,14 +1,8 @@
 // src/components/forms/EstudianteForm.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { generateStudentCode } from "@/lib/studentCode";
-
-interface Props {
-  gestionId: string;
-  cursoId: string;
-  onCreated?: () => void;
-}
 
 type Docs = {
   fotocopiaCarnet: boolean;
@@ -16,27 +10,70 @@ type Docs = {
   boletinAnioPasado: boolean;
 };
 
-export default function EstudianteForm({ gestionId, cursoId, onCreated }: Props) {
-  const [nombres, setNombres] = useState("");
-  const [primerApellido, setPrimerApellido] = useState("");
-  const [segundoApellido, setSegundoApellido] = useState("");
-  const [ci, setCi] = useState("");
-  const [fechaNacimiento, setFechaNacimiento] = useState("");
+type Initial = {
+  nombres?: string;
+  primerApellido?: string;
+  segundoApellido?: string;
+  ci?: string;
+  fechaNacimiento?: string;
+  documentosEntregados?: Partial<Docs>;
+  telefonosTutor?: string[];
+  telefonoEstudiante?: string;
+  direccion?: string;
+  colegioProcedencia?: string;
+  observaciones?: string;
+  activo?: boolean;
+};
+
+interface Props {
+  gestionId: string;
+  cursoId: string;
+  onCreated?: () => void;
+
+  mode?: "create" | "edit";
+  studentId?: string;
+  initial?: Initial;
+}
+
+export default function EstudianteForm({
+  gestionId,
+  cursoId,
+  onCreated,
+  mode = "create",
+  studentId,
+  initial,
+}: Props) {
+  const initialCiRef = useRef<string>(String(initial?.ci ?? "").trim());
+
+  const [nombres, setNombres] = useState(String(initial?.nombres ?? ""));
+  const [primerApellido, setPrimerApellido] = useState(String(initial?.primerApellido ?? ""));
+  const [segundoApellido, setSegundoApellido] = useState(String(initial?.segundoApellido ?? ""));
+  const [ci, setCi] = useState(String(initial?.ci ?? ""));
+  const [fechaNacimiento, setFechaNacimiento] = useState(String(initial?.fechaNacimiento ?? ""));
 
   const [docs, setDocs] = useState<Docs>({
-    fotocopiaCarnet: false,
-    certificadoNacimiento: false,
-    boletinAnioPasado: false,
+    fotocopiaCarnet: Boolean(initial?.documentosEntregados?.fotocopiaCarnet),
+    certificadoNacimiento: Boolean(initial?.documentosEntregados?.certificadoNacimiento),
+    boletinAnioPasado: Boolean(initial?.documentosEntregados?.boletinAnioPasado),
   });
 
-  const [telefonosTutor, setTelefonosTutor] = useState<string[]>([""]);
-  const [telefonoEstudiante, setTelefonoEstudiante] = useState("");
+  const [telefonosTutor, setTelefonosTutor] = useState<string[]>(
+    Array.isArray(initial?.telefonosTutor) && initial!.telefonosTutor!.length > 0
+      ? initial!.telefonosTutor!
+      : [""]
+  );
 
-  const [direccion, setDireccion] = useState("");
-  const [colegioProcedencia, setColegioProcedencia] = useState("");
-  const [observaciones, setObservaciones] = useState("");
+  const [telefonoEstudiante, setTelefonoEstudiante] = useState(
+    String(initial?.telefonoEstudiante ?? "")
+  );
 
-  const [activo, setActivo] = useState(true);
+  const [direccion, setDireccion] = useState(String(initial?.direccion ?? ""));
+  const [colegioProcedencia, setColegioProcedencia] = useState(
+    String(initial?.colegioProcedencia ?? "")
+  );
+  const [observaciones, setObservaciones] = useState(String(initial?.observaciones ?? ""));
+
+  const [activo, setActivo] = useState(Boolean(initial?.activo ?? true));
 
   const [ciStatus, setCiStatus] = useState<"idle" | "checking" | "ok" | "taken" | "error">(
     "idle"
@@ -58,11 +95,13 @@ export default function EstudianteForm({ gestionId, cursoId, onCreated }: Props)
     setCiStatus("idle");
   }, [ci]);
 
-  const addTelefonoTutor = () => setTelefonosTutor((prev) => [...prev, ""]);
+  useEffect(() => {
+    initialCiRef.current = String(initial?.ci ?? "").trim();
+  }, [initial?.ci]);
 
+  const addTelefonoTutor = () => setTelefonosTutor((prev) => [...prev, ""]);
   const removeTelefonoTutor = (idx: number) =>
     setTelefonosTutor((prev) => prev.filter((_, i) => i !== idx));
-
   const updateTelefonoTutor = (idx: number, value: string) =>
     setTelefonosTutor((prev) => prev.map((v, i) => (i === idx ? value : v)));
 
@@ -70,17 +109,43 @@ export default function EstudianteForm({ gestionId, cursoId, onCreated }: Props)
     const v = ci.trim();
     if (!v) return;
 
+    if (mode === "edit" && v === initialCiRef.current) {
+      setCiStatus("ok");
+      return;
+    }
+
     try {
       setCiStatus("checking");
-      const res = await fetch(`/api/students/check-ci?ci=${encodeURIComponent(v)}`, {
-        cache: "no-store",
-      });
+      const url =
+        mode === "edit" && studentId
+          ? `/api/students/check-ci?ci=${encodeURIComponent(v)}&excludeStudentId=${encodeURIComponent(
+              studentId
+            )}`
+          : `/api/students/check-ci?ci=${encodeURIComponent(v)}`;
+
+      const res = await fetch(url, { cache: "no-store" });
       const data = await res.json().catch(() => null);
       if (!res.ok) throw new Error(data?.error ?? "No se pudo validar el CI");
       setCiStatus(data?.available ? "ok" : "taken");
     } catch {
       setCiStatus("error");
     }
+  };
+
+  const resetCreateForm = () => {
+    setNombres("");
+    setPrimerApellido("");
+    setSegundoApellido("");
+    setCi("");
+    setFechaNacimiento("");
+    setDocs({ fotocopiaCarnet: false, certificadoNacimiento: false, boletinAnioPasado: false });
+    setTelefonosTutor([""]);
+    setTelefonoEstudiante("");
+    setDireccion("");
+    setColegioProcedencia("");
+    setObservaciones("");
+    setActivo(true);
+    setCiStatus("idle");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -98,48 +163,47 @@ export default function EstudianteForm({ gestionId, cursoId, onCreated }: Props)
     const phones = telefonosTutor.map((t) => t.trim()).filter(Boolean);
     if (phones.length === 0) return setError("Debes registrar al menos un celular del tutor");
 
+    if (ciStatus === "taken") return setError("El CI ya está registrado");
+
     try {
       setLoading(true);
 
-      const res = await fetch("/api/students", {
-        method: "POST",
+      const payload = {
+        gestionId,
+        courseId: cursoId,
+        nombres: nombres.trim(),
+        primerApellido: primerApellido.trim(),
+        segundoApellido: segundoApellido.trim() || undefined,
+        ci: ci.trim(),
+        fechaNacimiento,
+        documentosEntregados: docs,
+        telefonosTutor: phones,
+        telefonoEstudiante: telefonoEstudiante.trim() || undefined,
+        direccion: direccion.trim(),
+        colegioProcedencia: colegioProcedencia.trim() || undefined,
+        observaciones: observaciones.trim() || undefined,
+        activo,
+      };
+
+      const isEdit = mode === "edit";
+      const endpoint = isEdit ? `/api/students/${studentId}` : "/api/students";
+      const method = isEdit ? "PATCH" : "POST";
+
+      const res = await fetch(endpoint, {
+        method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          gestionId,
-          courseId: cursoId,
-          nombres: nombres.trim(),
-          primerApellido: primerApellido.trim(),
-          segundoApellido: segundoApellido.trim() || undefined,
-          ci: ci.trim(),
-          fechaNacimiento,
-          documentosEntregados: docs,
-          telefonosTutor: phones,
-          telefonoEstudiante: telefonoEstudiante.trim() || undefined,
-          direccion: direccion.trim(),
-          colegioProcedencia: colegioProcedencia.trim() || undefined,
-          observaciones: observaciones.trim() || undefined,
-          activo,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json().catch(() => null);
       if (!res.ok) throw new Error(data?.error ?? "Error al guardar el estudiante");
 
       setSuccess(true);
-      setNombres("");
-      setPrimerApellido("");
-      setSegundoApellido("");
-      setCi("");
-      setFechaNacimiento("");
-      setDocs({ fotocopiaCarnet: false, certificadoNacimiento: false, boletinAnioPasado: false });
-      setTelefonosTutor([""]);
-      setTelefonoEstudiante("");
-      setDireccion("");
-      setColegioProcedencia("");
-      setObservaciones("");
-      setActivo(true);
-      setCiStatus("idle");
-      onCreated?.();
+
+      if (!isEdit) {
+        resetCreateForm();
+        onCreated?.();
+      }
     } catch (e: any) {
       setError(e?.message ?? "Error al guardar el estudiante");
     } finally {
@@ -156,7 +220,7 @@ export default function EstudianteForm({ gestionId, cursoId, onCreated }: Props)
       )}
       {success && (
         <div className="bg-emerald-950/40 border border-emerald-900 text-emerald-200 p-2 rounded">
-          Estudiante creado correctamente
+          {mode === "edit" ? "Cambios guardados correctamente" : "Estudiante creado correctamente"}
         </div>
       )}
 
@@ -182,8 +246,8 @@ export default function EstudianteForm({ gestionId, cursoId, onCreated }: Props)
           />
           <div className="mt-1 text-xs">
             {ciStatus === "checking" && <span className="text-slate-400">Validando…</span>}
-            {ciStatus === "ok" && <span className="text-emerald-300">CI disponible ✅</span>}
-            {ciStatus === "taken" && <span className="text-red-300">CI ya existe ❌</span>}
+            {ciStatus === "ok" && <span className="text-emerald-300">CI disponible</span>}
+            {ciStatus === "taken" && <span className="text-red-300">CI ya existe</span>}
             {ciStatus === "error" && (
               <span className="text-amber-300">
                 No se pudo validar el CI (igual se validará al guardar)
@@ -366,7 +430,7 @@ export default function EstudianteForm({ gestionId, cursoId, onCreated }: Props)
           disabled={loading || ciStatus === "checking"}
           className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded disabled:opacity-50"
         >
-          {loading ? "Guardando..." : "Guardar estudiante"}
+          {loading ? "Guardando..." : mode === "edit" ? "Guardar cambios" : "Guardar estudiante"}
         </button>
 
         <p className="text-xs text-slate-500">
