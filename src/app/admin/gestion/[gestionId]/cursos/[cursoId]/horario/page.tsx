@@ -3,6 +3,7 @@ export const runtime = "nodejs";
 
 import HorarioCursoForm from "@/components/forms/HorarioCursoForm";
 import Link from "next/link";
+import { getCourseDisplay, getGestionDisplay } from "@/lib/displayNames";
 
 export default async function HorarioCursoPage({
   params,
@@ -11,11 +12,16 @@ export default async function HorarioCursoPage({
 }) {
   const { gestionId, cursoId } = await params;
 
+  const [gestion, curso] = await Promise.all([
+    getGestionDisplay(gestionId),
+    getCourseDisplay(cursoId),
+  ]);
+
   return (
     <div className="p-6 space-y-4 text-slate-100">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-slate-100">
-          Horario — Curso {cursoId} (Gestión {gestionId})
+          Horario — {curso.title} ({gestion.title})
         </h1>
 
         <Link

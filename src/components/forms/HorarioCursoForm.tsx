@@ -1,3 +1,4 @@
+// src/components/forms/HorarioCursoForm.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -103,17 +104,23 @@ function getAllowedSubjectsForCourse(teacher: Teacher, courseId: string): Set<st
   }
 
   const courseIds =
-    Array.isArray(teacher.teachingCourseIds) ? teacher.teachingCourseIds :
-    Array.isArray(teacher.courseIds) ? teacher.courseIds :
-    Array.isArray(teacher.courses) ? teacher.courses :
-    null;
+    Array.isArray(teacher.teachingCourseIds)
+      ? teacher.teachingCourseIds
+      : Array.isArray(teacher.courseIds)
+      ? teacher.courseIds
+      : Array.isArray(teacher.courses)
+      ? teacher.courses
+      : null;
 
   if (courseIds?.includes(courseId)) {
     const globalSubjects =
-      Array.isArray(teacher.teachingSubjectIds) ? teacher.teachingSubjectIds :
-      Array.isArray(teacher.subjectIds) ? teacher.subjectIds :
-      Array.isArray(teacher.subjects) ? teacher.subjects :
-      null;
+      Array.isArray(teacher.teachingSubjectIds)
+        ? teacher.teachingSubjectIds
+        : Array.isArray(teacher.subjectIds)
+        ? teacher.subjectIds
+        : Array.isArray(teacher.subjects)
+        ? teacher.subjects
+        : null;
 
     if (globalSubjects && globalSubjects.length > 0) {
       return new Set(uniq(globalSubjects.map(String)));
@@ -130,20 +137,31 @@ function teacherCanTeachCourse(teacher: Teacher, courseId: string): boolean | nu
   if (allowed) return allowed.size > 0;
 
   const courseIds =
-    Array.isArray(teacher.teachingCourseIds) ? teacher.teachingCourseIds :
-    Array.isArray(teacher.courseIds) ? teacher.courseIds :
-    Array.isArray(teacher.courses) ? teacher.courses :
-    null;
+    Array.isArray(teacher.teachingCourseIds)
+      ? teacher.teachingCourseIds
+      : Array.isArray(teacher.courseIds)
+      ? teacher.courseIds
+      : Array.isArray(teacher.courses)
+      ? teacher.courses
+      : null;
 
   if (courseIds) return courseIds.includes(courseId);
 
-  if (Array.isArray(teacher.assignments)) return teacher.assignments.some((x) => String(x?.courseId) === courseId);
-  if (Array.isArray(teacher.asignaciones)) return teacher.asignaciones.some((x) => String(x?.courseId) === courseId);
+  if (Array.isArray(teacher.assignments))
+    return teacher.assignments.some((x) => String(x?.courseId) === courseId);
+  if (Array.isArray(teacher.asignaciones))
+    return teacher.asignaciones.some((x) => String(x?.courseId) === courseId);
 
   return null;
 }
 
-export default function HorarioCursoForm({ gestionId, cursoId }: { gestionId: string; cursoId: string }) {
+export default function HorarioCursoForm({
+  gestionId,
+  cursoId,
+}: {
+  gestionId: string;
+  cursoId: string;
+}) {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
@@ -158,6 +176,9 @@ export default function HorarioCursoForm({ gestionId, cursoId }: { gestionId: st
   const [loadingLists, setLoadingLists] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  const [lockAutoSubject, setLockAutoSubject] = useState(false);
+  const [lockAutoTeacher, setLockAutoTeacher] = useState(false);
 
   const selectedTeacher = useMemo(
     () => teachers.find((t) => t.id === teacherId) ?? null,
@@ -178,7 +199,7 @@ export default function HorarioCursoForm({ gestionId, cursoId }: { gestionId: st
 
     let base = teachers.filter((t) => {
       const can = teacherCanTeachCourse(t, cursoId);
-      if (can === null) return true; // si no sabemos, no lo ocultamos
+      if (can === null) return true;
       return can;
     });
 
@@ -201,10 +222,10 @@ export default function HorarioCursoForm({ gestionId, cursoId }: { gestionId: st
       return;
     }
 
-    if (!teacherId && visibleTeachers.length === 1) {
+    if (!teacherId && visibleTeachers.length === 1 && !lockAutoTeacher) {
       setTeacherId(visibleTeachers[0].id);
     }
-  }, [subjectId, visibleTeachers, teacherId]);
+  }, [subjectId, visibleTeachers, teacherId, lockAutoTeacher]);
 
   useEffect(() => {
     if (!teacherId) return;
@@ -214,10 +235,10 @@ export default function HorarioCursoForm({ gestionId, cursoId }: { gestionId: st
       return;
     }
 
-    if (!subjectId && visibleSubjects.length === 1) {
+    if (!subjectId && visibleSubjects.length === 1 && !lockAutoSubject) {
       setSubjectId(visibleSubjects[0].id);
     }
-  }, [teacherId, subjectId, visibleSubjects]);
+  }, [teacherId, subjectId, visibleSubjects, lockAutoSubject]);
 
   const canSubmit = useMemo(() => {
     return Boolean(gestionId && cursoId && teacherId && subjectId && slots.length > 0);
@@ -305,6 +326,8 @@ export default function HorarioCursoForm({ gestionId, cursoId }: { gestionId: st
     setSubjectId("");
     setSlots([{ dia: "Lunes", inicio: "08:00", fin: "09:00" }]);
     setEditingId(null);
+    setLockAutoSubject(false);
+    setLockAutoTeacher(false);
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -383,6 +406,8 @@ export default function HorarioCursoForm({ gestionId, cursoId }: { gestionId: st
     );
     setSuccess(null);
     setError(null);
+    setLockAutoSubject(false);
+    setLockAutoTeacher(false);
   }
 
   const subjectName = (id: string) => subjects.find((s) => s.id === id)?.nombre ?? id;
@@ -391,9 +416,7 @@ export default function HorarioCursoForm({ gestionId, cursoId }: { gestionId: st
   return (
     <div className="space-y-6">
       {error && (
-        <div className="bg-red-950/40 border border-red-900 text-red-200 p-2 rounded">
-          {error}
-        </div>
+        <div className="bg-red-950/40 border border-red-900 text-red-200 p-2 rounded">{error}</div>
       )}
       {success && (
         <div className="bg-emerald-950/40 border border-emerald-900 text-emerald-200 p-2 rounded">
@@ -402,26 +425,28 @@ export default function HorarioCursoForm({ gestionId, cursoId }: { gestionId: st
       )}
 
       <form onSubmit={handleSave} className="space-y-4">
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto] items-end">
           <div>
             <label className="block text-sm font-medium mb-1 text-slate-200">Materia</label>
             <select
               className="bg-slate-950 border border-slate-700 rounded p-2 w-full text-slate-100"
               value={subjectId}
-              onChange={(e) => setSubjectId(e.target.value)}
+              onChange={(e) => {
+                setSubjectId(e.target.value);
+                setLockAutoSubject(false);
+              }}
               disabled={loadingLists}
             >
-              <option value="">
-                {loadingLists ? "Cargando..." : "Seleccionar materia"}
-              </option>
-
+              <option value="">{loadingLists ? "Cargando..." : "Seleccionar materia"}</option>
               {visibleSubjects.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.nombre}
                 </option>
               ))}
             </select>
-            <p className="text-xs text-slate-500 mt-1">Materias del curso (filtradas por profesor si eliges profesor).</p>
+            <p className="text-xs text-slate-500 mt-1">
+              Materias del curso (filtradas por profesor si eliges profesor).
+            </p>
           </div>
 
           <div>
@@ -429,7 +454,10 @@ export default function HorarioCursoForm({ gestionId, cursoId }: { gestionId: st
             <select
               className="bg-slate-950 border border-slate-700 rounded p-2 w-full text-slate-100"
               value={teacherId}
-              onChange={(e) => setTeacherId(e.target.value)}
+              onChange={(e) => {
+                setTeacherId(e.target.value);
+                setLockAutoTeacher(false);
+              }}
               disabled={loadingLists}
             >
               <option value="">
@@ -452,7 +480,28 @@ export default function HorarioCursoForm({ gestionId, cursoId }: { gestionId: st
                 </option>
               ))}
             </select>
-            <p className="text-xs text-slate-500 mt-1">Filtrado por curso y por materia (si seleccionas materia).</p>
+            <p className="text-xs text-slate-500 mt-1">
+              Filtrado por curso y por materia (si seleccionas materia).
+            </p>
+          </div>
+
+          <div className="pb-[22px]">
+            <button
+              type="button"
+              aria-label="Limpiar selección"
+              title="Limpiar selección"
+              className="w-10 h-10 rounded border border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-200 disabled:opacity-50"
+              disabled={!subjectId && !teacherId}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                setSubjectId("");
+                setTeacherId("");
+                setLockAutoSubject(true);
+                setLockAutoTeacher(true);
+              }}
+            >
+              ✕
+            </button>
           </div>
         </div>
 
@@ -606,7 +655,9 @@ export default function HorarioCursoForm({ gestionId, cursoId }: { gestionId: st
         )}
       </div>
 
-      <p className="text-xs text-slate-500">Gestión: {gestionId} • Curso: {cursoId}</p>
+      <p className="text-xs text-slate-500">
+        Gestión: {gestionId} • Curso: {cursoId}
+      </p>
     </div>
   );
 }

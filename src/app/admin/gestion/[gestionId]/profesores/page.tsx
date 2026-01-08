@@ -3,6 +3,7 @@ export const runtime = "nodejs";
 
 import Link from "next/link";
 import { cookies } from "next/headers";
+import { getGestionDisplay } from "@/lib/displayNames";
 
 type Teacher = {
   id: string;
@@ -83,14 +84,13 @@ export default async function ProfesoresPage({
     );
   }
 
+  const gestion = await getGestionDisplay(gestionId);
   const result = await getTeachers(gestionId);
 
   if (!result.ok) {
     return (
       <div className="p-6 space-y-4 text-slate-100">
-        <h1 className="text-2xl font-bold text-slate-100">
-          Profesores — Gestión {gestionId}
-        </h1>
+        <h1 className="text-2xl font-bold text-slate-100">Profesores — {gestion.title}</h1>
 
         <div className="bg-red-950/40 border border-red-900 text-red-200 rounded-lg p-4">
           <p className="font-semibold">Error cargando profesores</p>
@@ -98,9 +98,7 @@ export default async function ProfesoresPage({
           <p className="text-sm mt-1">Status: {result.status}</p>
 
           <details className="mt-3">
-            <summary className="cursor-pointer text-sm text-slate-200">
-              Ver respuesta cruda
-            </summary>
+            <summary className="cursor-pointer text-sm text-slate-200">Ver respuesta cruda</summary>
             <pre className="text-xs mt-2 whitespace-pre-wrap break-words text-slate-200">
               {result.rawText ?? "(vacío)"}
             </pre>
@@ -122,9 +120,7 @@ export default async function ProfesoresPage({
   return (
     <div className="p-6 space-y-4 text-slate-100">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-slate-100">
-          Profesores — Gestión {gestionId}
-        </h1>
+        <h1 className="text-2xl font-bold text-slate-100">Profesores — {gestion.title}</h1>
 
         <Link
           href={`/admin/gestion/${gestionId}/profesores/nuevo`}
@@ -150,21 +146,17 @@ export default async function ProfesoresPage({
                 <th className="text-left p-3 text-slate-200">Acciones</th>
               </tr>
             </thead>
-
             <tbody>
               {teachers.map((t) => (
                 <tr key={t.id} className="border-t border-slate-800">
                   <td className="p-3 text-slate-100">{t.nombreCompleto}</td>
                   <td className="p-3 text-slate-300">{t.ci}</td>
-                  <td className="p-3 text-slate-300">{t.telefono ?? "-"}</td>
-                  <td className="p-3 text-slate-300">
-                    {t.activo ? "Activo" : "Inactivo"}
-                  </td>
-
+                  <td className="p-3 text-slate-300">{t.telefono ?? "—"}</td>
+                  <td className="p-3 text-slate-300">{t.activo ? "Activo" : "Inactivo"}</td>
                   <td className="p-3">
                     <Link
-                      className="inline-flex bg-slate-800 hover:bg-slate-700 text-slate-100 px-3 py-2 rounded border border-slate-700 text-xs"
-                      href={`/admin/gestion/${gestionId}/profesores/${t.id}/editar`}
+                      className="inline-flex text-xs bg-slate-800 hover:bg-slate-700 text-slate-100 px-3 py-2 rounded border border-slate-700"
+                      href={`/admin/gestion/${gestionId}/profesores/${t.id}`}
                     >
                       Editar cursos/materias
                     </Link>

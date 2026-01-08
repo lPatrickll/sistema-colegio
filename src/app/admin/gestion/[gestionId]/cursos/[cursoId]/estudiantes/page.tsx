@@ -1,6 +1,7 @@
 // src/app/admin/gestion/[gestionId]/cursos/[cursoId]/estudiantes/page.tsx
 import Link from "next/link";
 import { adminDb } from "@/lib/firebase-admin";
+import { getCourseDisplay, getGestionTitle } from "@/lib/displayNames";
 
 export const runtime = "nodejs";
 
@@ -10,6 +11,11 @@ export default async function EstudiantesPage({
   params: Promise<{ gestionId: string; cursoId: string }>;
 }) {
   const { gestionId, cursoId } = await params;
+
+  const [gestionTitle, curso] = await Promise.all([
+    getGestionTitle(gestionId),
+    getCourseDisplay(cursoId),
+  ]);
 
   if (!gestionId || !cursoId) {
     return (
@@ -58,7 +64,7 @@ export default async function EstudiantesPage({
     <div className="p-6 space-y-4 text-slate-100">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">
-          Estudiantes — Curso {cursoId} (Gestión {gestionId})
+          Estudiantes — Curso {curso.title} (Gestión {gestionTitle})
         </h1>
 
         <Link

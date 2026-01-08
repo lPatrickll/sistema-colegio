@@ -1,7 +1,9 @@
+// src/app/admin/gestion/[gestionId]/cursos/page.tsx
 export const runtime = "nodejs";
 
 import Link from "next/link";
 import { cookies } from "next/headers";
+import { getGestionDisplay } from "@/lib/displayNames";
 
 type Course = {
   id: string;
@@ -81,14 +83,13 @@ export default async function CursosPage({
     );
   }
 
+  const gestion = await getGestionDisplay(gestionId);
   const result = await getCourses(gestionId);
 
   if (!result.ok) {
     return (
       <div className="p-6 space-y-4">
-        <h1 className="text-2xl font-bold text-slate-100">
-          Cursos — Gestión {gestionId}
-        </h1>
+        <h1 className="text-2xl font-bold text-slate-100">Cursos — {gestion.title}</h1>
 
         <div className="bg-red-950/40 border border-red-900 text-red-200 rounded-lg p-4">
           <p className="font-semibold">Error cargando cursos</p>
@@ -96,9 +97,7 @@ export default async function CursosPage({
           <p className="text-sm mt-1">Status: {result.status}</p>
 
           <details className="mt-3">
-            <summary className="cursor-pointer text-sm text-slate-200">
-              Ver respuesta cruda
-            </summary>
+            <summary className="cursor-pointer text-sm text-slate-200">Ver respuesta cruda</summary>
             <pre className="text-xs mt-2 whitespace-pre-wrap break-words text-slate-200">
               {result.rawText ?? "(vacío)"}
             </pre>
@@ -120,9 +119,7 @@ export default async function CursosPage({
   return (
     <div className="p-6 space-y-4 text-slate-100">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-slate-100">
-          Cursos — Gestión {gestionId}
-        </h1>
+        <h1 className="text-2xl font-bold text-slate-100">Cursos — {gestion.title}</h1>
 
         <Link
           href={`/admin/gestion/${gestionId}/cursos/nuevo`}
@@ -153,9 +150,7 @@ export default async function CursosPage({
                 <tr key={c.id} className="border-t border-slate-800">
                   <td className="p-3 text-slate-100">{c.nombre}</td>
                   <td className="p-3 text-slate-300">{c.nivel}</td>
-                  <td className="p-3 text-slate-300">
-                    {c.activo ? "Activo" : "Inactivo"}
-                  </td>
+                  <td className="p-3 text-slate-300">{c.activo ? "Activo" : "Inactivo"}</td>
                   <td className="p-3">
                     <Link
                       className="inline-flex text-xs bg-slate-800 hover:bg-slate-700 text-slate-100 px-3 py-2 rounded border border-slate-700"

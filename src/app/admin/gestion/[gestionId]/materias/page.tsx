@@ -2,6 +2,7 @@ export const runtime = "nodejs";
 
 import Link from "next/link";
 import { cookies } from "next/headers";
+import { getGestionTitle } from "@/lib/displayNames";
 
 type Subject = {
   id: string;
@@ -69,6 +70,8 @@ export default async function MateriasPage({
 }) {
   const { gestionId } = await params;
 
+  const gestionTitle = await getGestionTitle(gestionId);
+
   if (!gestionId) {
     return (
       <div className="p-6">
@@ -85,7 +88,7 @@ export default async function MateriasPage({
     return (
       <div className="p-6 space-y-4">
         <h1 className="text-2xl font-bold text-slate-100">
-          Materias — Gestión {gestionId}
+          Materias — Gestión {gestionTitle}
         </h1>
 
         <div className="bg-red-950/40 border border-red-900 text-red-200 rounded-lg p-4">
@@ -119,7 +122,7 @@ export default async function MateriasPage({
     <div className="p-6 space-y-4 text-slate-100">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-slate-100">
-          Materias — Gestión {gestionId}
+          Materias — Gestión {gestionTitle}
         </h1>
 
         <Link
